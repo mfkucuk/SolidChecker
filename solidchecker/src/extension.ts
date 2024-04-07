@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with registerCommand
 	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('solidchecker.solidChecker', async () => {
+	let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
 		// The code you place here will be executed every time your command is executed
 
 		const files = await fetchAllFiles();
@@ -29,23 +29,36 @@ export function activate(context: vscode.ExtensionContext) {
 
 		const answer = await sendEndPrompt();
 
-		const panel = vscode.window.createWebviewPanel(
-			'solidChecker',
+		const answerPanel = vscode.window.createWebviewPanel(
+			'runSolidChecker',
 			'Solid Checker',
 			vscode.ViewColumn.One,
 			{},
 		);
 		
-		panel.webview.html = getWebviewContent(beautifyAnswer(answer));
+		answerPanel.webview.html = getResultWebviewContent(beautifyAnswer(answer));
 	});
 
-	context.subscriptions.push(disposable);
+	let configDisposable = vscode.commands.registerCommand('solidchecker.configSolidChecker', async () => {
+		
+		const configPanel = vscode.window.createWebviewPanel(
+			'configSolidChecker',
+			'Solid Checker Config',
+			vscode.ViewColumn.One,
+			{},
+		);
+
+		configPanel.webview.html = getConfigWebviewContent();
+	});
+
+	context.subscriptions.push(runDisposable);
+	context.subscriptions.push(configDisposable);
 }
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
 
-function getWebviewContent(answer: string) {
+function getResultWebviewContent(answer: string) {
 	return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -57,7 +70,19 @@ function getWebviewContent(answer: string) {
 	  ${answer}
   </body>
   </html>`;
-  }
+}
+
+function getConfigWebviewContent() {
+	return `<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Solid Checker Config</title>
+		</head>
+		<body>
+			<h1>Config Panel</h1>
+		</body>
+	</html>`;
+}
 
 // Fetch all files in the workspace
 const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {

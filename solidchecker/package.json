@@ -14,8 +14,12 @@
   "contributes": {
     "commands": [
       {
-        "command": "solidchecker.solidChecker",
+        "command": "solidchecker.runSolidChecker",
         "title": "Run: Solid Checker"
+      },
+      {
+        "command": "solidchecker.configSolidChecker",
+        "title": "Config: Solid Checker"
       }
     ]
   },

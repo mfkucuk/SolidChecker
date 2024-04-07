@@ -1,1 +1,2 @@
 solidchecker/node_modules/**
+solidchecker/src/apiKey.ts

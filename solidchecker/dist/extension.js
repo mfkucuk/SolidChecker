@@ -44,7 +44,7 @@ function activate(context) {
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with registerCommand
     // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('solidchecker.solidChecker', async () => {
+    let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
         // The code you place here will be executed every time your command is executed
         const files = await fetchAllFiles();
         await (0, gemini_1.sendInitialPrompt)();
@@ -52,16 +52,21 @@ function activate(context) {
             await (0, gemini_1.sendOneFilePrompt)(fileName, filePath);
         }
         const answer = await (0, gemini_1.sendEndPrompt)();
-        const panel = vscode.window.createWebviewPanel('solidChecker', 'Solid Checker', vscode.ViewColumn.One, {});
-        panel.webview.html = getWebviewContent((0, gemini_1.beautifyAnswer)(answer));
+        const answerPanel = vscode.window.createWebviewPanel('runSolidChecker', 'Solid Checker', vscode.ViewColumn.One, {});
+        answerPanel.webview.html = getResultWebviewContent((0, gemini_1.beautifyAnswer)(answer));
     });
-    context.subscriptions.push(disposable);
+    let configDisposable = vscode.commands.registerCommand('solidchecker.configSolidChecker', async () => {
+        const configPanel = vscode.window.createWebviewPanel('configSolidChecker', 'Solid Checker Config', vscode.ViewColumn.One, {});
+        configPanel.webview.html = getConfigWebviewContent();
+    });
+    context.subscriptions.push(runDisposable);
+    context.subscriptions.push(configDisposable);
 }
 exports.activate = activate;
 // This method is called when your extension is deactivated
 function deactivate() { }
 exports.deactivate = deactivate;
-function getWebviewContent(answer) {
+function getResultWebviewContent(answer) {
     return `<!DOCTYPE html>
   <html lang="en">
   <head>
@@ -73,6 +78,17 @@ function getWebviewContent(answer) {
 	  ${answer}
   </body>
   </html>`;
+}
+function getConfigWebviewContent() {
+    return `<!DOCTYPE html>
+	<html>
+		<head>
+			<title>Solid Checker Config</title>
+		</head>
+		<body>
+			<h1>Config Panel</h1>
+		</body>
+	</html>`;
 }
 // Fetch all files in the workspace
 const fetchAllFiles = async () => {
@@ -101,6 +117,7 @@ module.exports = require("vscode");
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.beautifyAnswer = exports.sendEndPrompt = exports.sendOneFilePrompt = exports.sendInitialPrompt = void 0;
 const generative_ai_1 = __webpack_require__(3);
+const apiKey_1 = __webpack_require__(5);
 const initialPrompt = `I want you to check the project I am about to send you to see whether it fits SOLID principles or not. 
 
 Since the project is too big I am going to send it to you following this rule:
@@ -114,7 +131,7 @@ Then you just answer and nothing else: Received file {filename}
 And when I tell you "ALL FILES SENT", then you can continue processing the data and send me this information:
 
 If there is a part violating the SOLID principles, in which file there is a violation? What is the line number in that file the violation occurs (THIS IS IMPORTANT), and then your suggestions for fixing it.`;
-const genAI = new generative_ai_1.GoogleGenerativeAI('AIzaSyBIRtYIEN0xhQGxYeKN0iD3-n8T-o-g-0w');
+const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey_1.apiKey);
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 const chat = model.startChat();
 async function sendInitialPrompt() {
@@ -1298,6 +1315,16 @@ exports.POSSIBLE_ROLES = POSSIBLE_ROLES;
 /***/ ((module) => {
 
 module.exports = require("path");
+
+/***/ }),
+/* 5 */
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.apiKey = void 0;
+exports.apiKey = 'AIzaSyBIRtYIEN0xhQGxYeKN0iD3-n8T-o-g-0w';
+
 
 /***/ })
 /******/ 	]);

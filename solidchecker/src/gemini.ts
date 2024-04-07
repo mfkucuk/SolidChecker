@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { apiKey } from './apiKey';
 
 const initialPrompt = `I want you to check the project I am about to send you to see whether it fits SOLID principles or not. 
 
@@ -14,7 +15,7 @@ And when I tell you "ALL FILES SENT", then you can continue processing the data 
 
 If there is a part violating the SOLID principles, in which file there is a violation? What is the line number in that file the violation occurs (THIS IS IMPORTANT), and then your suggestions for fixing it.`;
 
-const genAI = new GoogleGenerativeAI('AIzaSyBIRtYIEN0xhQGxYeKN0iD3-n8T-o-g-0w');
+const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 const chat = model.startChat();
