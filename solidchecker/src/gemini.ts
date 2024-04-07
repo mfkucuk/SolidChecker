@@ -41,12 +41,9 @@ export async function sendEndPrompt() {
 }
 
 export function beautifyAnswer(text: string): string {
-    // Regex pattern to match text enclosed within **
     const pattern = /\*\*(.*?)\*\*/g;
 
-    // Replace text enclosed within ** with <h1> tags
-    const parsedText = text.replace(pattern, '<h1>$1</h1>');
+    const parsedText = text.replace(pattern, '<h1 style="color: #999999; text-align: center;>$1</h1>');
 
-    // Enclose the rest of the text with <p> tags
-    return `<p>${parsedText}</p>`;
+    return `<p style="color: #666666; text-align: justify;>${parsedText}</p>`;
 }

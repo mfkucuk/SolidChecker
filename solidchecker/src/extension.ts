@@ -60,16 +60,19 @@ export function deactivate() {}
 
 function getResultWebviewContent(answer: string) {
 	return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>Solid Checker</title>
-  </head>
-  <body>
-	  ${answer}
-  </body>
-  </html>`;
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Solid Checker</title>
+	</head>
+	<body style="font-family: Arial, sans-serif; padding: 20px;">
+		<div style="max-width: 600px; margin: 0 auto;">
+			${answer}
+		</div>
+	</body>
+	</html>
+	`;
 }
 
 function getConfigWebviewContent() {
@@ -80,6 +83,16 @@ function getConfigWebviewContent() {
 		</head>
 		<body>
 			<h1>Config Panel</h1>
+	
+			<ol style="width: max-content;">
+				<li style="text-align: justify;">S: Single Responsiblity Principle <input type="checkbox"></li>
+				<li style="text-align: justify;">O: Open-Closed Principle <input type="checkbox"></li>
+				<li style="text-align: justify;">L: Liskov Substitution Principle <input type="checkbox"></li>
+				<li style="text-align: justify;">I: Interface Segregation Principle  <input type="checkbox"></li>
+				<li style="text-align: justify;">D: Dependency Inversion Principle <input type="checkbox"></li>
+			</ol>
+	
+			<input type="file" multiple>
 		</body>
 	</html>`;
 }
@@ -99,4 +112,3 @@ const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {
 
     return fileNamesAndContents;
 };
-

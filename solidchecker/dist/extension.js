@@ -34,7 +34,7 @@ exports.deactivate = exports.activate = void 0;
 // Import the module and reference it with the alias vscode in your code below
 const vscode = __importStar(__webpack_require__(1));
 const gemini_1 = __webpack_require__(2);
-const path = __importStar(__webpack_require__(4));
+const path = __importStar(__webpack_require__(5));
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 function activate(context) {
@@ -68,16 +68,19 @@ function deactivate() { }
 exports.deactivate = deactivate;
 function getResultWebviewContent(answer) {
     return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>Solid Checker</title>
-  </head>
-  <body>
-	  ${answer}
-  </body>
-  </html>`;
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Solid Checker</title>
+	</head>
+	<body style="font-family: Arial, sans-serif; padding: 20px;">
+		<div style="max-width: 600px; margin: 0 auto;">
+			${answer}
+		</div>
+	</body>
+	</html>
+	`;
 }
 function getConfigWebviewContent() {
     return `<!DOCTYPE html>
@@ -87,6 +90,16 @@ function getConfigWebviewContent() {
 		</head>
 		<body>
 			<h1>Config Panel</h1>
+	
+			<ol style="width: max-content;">
+				<li style="text-align: justify;">S: Single Responsiblity Principle <input type="checkbox"></li>
+				<li style="text-align: justify;">O: Open-Closed Principle <input type="checkbox"></li>
+				<li style="text-align: justify;">L: Liskov Substitution Principle <input type="checkbox"></li>
+				<li style="text-align: justify;">I: Interface Segregation Principle  <input type="checkbox"></li>
+				<li style="text-align: justify;">D: Dependency Inversion Principle <input type="checkbox"></li>
+			</ol>
+	
+			<input type="file" multiple>
 		</body>
 	</html>`;
 }
@@ -117,7 +130,7 @@ module.exports = require("vscode");
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.beautifyAnswer = exports.sendEndPrompt = exports.sendOneFilePrompt = exports.sendInitialPrompt = void 0;
 const generative_ai_1 = __webpack_require__(3);
-const apiKey_1 = __webpack_require__(5);
+const apiKey_1 = __webpack_require__(4);
 const initialPrompt = `I want you to check the project I am about to send you to see whether it fits SOLID principles or not. 
 
 Since the project is too big I am going to send it to you following this rule:
@@ -151,12 +164,9 @@ async function sendEndPrompt() {
 }
 exports.sendEndPrompt = sendEndPrompt;
 function beautifyAnswer(text) {
-    // Regex pattern to match text enclosed within **
     const pattern = /\*\*(.*?)\*\*/g;
-    // Replace text enclosed within ** with <h1> tags
-    const parsedText = text.replace(pattern, '<h1>$1</h1>');
-    // Enclose the rest of the text with <p> tags
-    return `<p>${parsedText}</p>`;
+    const parsedText = text.replace(pattern, '<h1 style="color: #999999; text-align: center;>$1</h1>');
+    return `<p style="color: #666666; text-align: justify;>${parsedText}</p>`;
 }
 exports.beautifyAnswer = beautifyAnswer;
 
@@ -1312,12 +1322,6 @@ exports.POSSIBLE_ROLES = POSSIBLE_ROLES;
 
 /***/ }),
 /* 4 */
-/***/ ((module) => {
-
-module.exports = require("path");
-
-/***/ }),
-/* 5 */
 /***/ ((__unused_webpack_module, exports) => {
 
 
@@ -1325,6 +1329,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.apiKey = void 0;
 exports.apiKey = 'AIzaSyBIRtYIEN0xhQGxYeKN0iD3-n8T-o-g-0w';
 
+
+/***/ }),
+/* 5 */
+/***/ ((module) => {
+
+module.exports = require("path");
 
 /***/ })
 /******/ 	]);
