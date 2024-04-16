@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ChatSession, GoogleGenerativeAI } from '@google/generative-ai';
 import { apiKey } from './apiKey';
 
 const initialPrompt = `I want you to check the project I am about to send you to see whether it fits SOLID principles or not. 
@@ -18,9 +18,12 @@ If there is a part violating the SOLID principles, in which file there is a viol
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-const chat = model.startChat();
+let chat: ChatSession;
 
 export async function sendInitialPrompt(): Promise<string> {
+    
+    chat = model.startChat();
+    
     const result = await chat.sendMessage(initialPrompt); 
     
     return result.response.text();
@@ -41,9 +44,12 @@ export async function sendEndPrompt() {
 }
 
 export function beautifyAnswer(text: string): string {
+    // Regex pattern to match text enclosed within **
     const pattern = /\*\*(.*?)\*\*/g;
 
-    const parsedText = text.replace(pattern, '<h1 style="color: #999999; text-align: center;>$1</h1>');
+    // Replace text enclosed within ** with <h1> tags
+    const parsedText = text.replace(pattern, '<h1>$1</h1>');
 
-    return `<p style="color: #666666; text-align: justify;>${parsedText}</p>`;
+    // Enclose the rest of the text with <p> tags
+    return `<p>${parsedText}</p>`;
 }

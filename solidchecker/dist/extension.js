@@ -73,9 +73,30 @@ function getResultWebviewContent(answer) {
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Solid Checker</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+				padding: 20px;
+			}
+			
+			.container {
+				max-width: 600px;
+				margin: 0 auto;
+			}
+			
+			h1 {
+				color: #AAAAAA;
+				text-align: center;
+			}
+			
+			p {
+				text-align: justify;
+			}		
+		</style>
 	</head>
 	<body style="font-family: Arial, sans-serif; padding: 20px;">
-		<div style="max-width: 600px; margin: 0 auto;">
+		<div className='container' style="max-width: 600px; margin: 0 auto;">
+			<h1>Result Panel</h1>
 			${answer}
 		</div>
 	</body>
@@ -85,23 +106,83 @@ function getResultWebviewContent(answer) {
 function getConfigWebviewContent() {
     return `<!DOCTYPE html>
 	<html>
-		<head>
-			<title>Solid Checker Config</title>
-		</head>
-		<body>
-			<h1>Config Panel</h1>
+	<head>
+		<title>Solid Checker Config</title>
+		<style>
+			body {
+				font-family: Arial, sans-serif;
+			}
+
+			h1 {
+				text-align: center;
+			}
+
+			ol {
+				width: max-content;
+				list-style: none; /* Remove default list styles */
+				padding-left: 0; /* Remove default padding */
+			}
+
+			li {
+				text-align: justify;
+				margin-bottom: 10px; /* Add some spacing between list items */
+			}
+
+			label {
+				display: inline-flex; /* Align checkboxes horizontally */
+				align-items: center; /* Center items vertically */
+			}
+
+			input[type="checkbox"] {
+				margin-right: 5px; /* Add spacing between checkbox and label text */
+			}
 	
-			<ol style="width: max-content;">
-				<li style="text-align: justify;">S: Single Responsiblity Principle <input type="checkbox"></li>
-				<li style="text-align: justify;">O: Open-Closed Principle <input type="checkbox"></li>
-				<li style="text-align: justify;">L: Liskov Substitution Principle <input type="checkbox"></li>
-				<li style="text-align: justify;">I: Interface Segregation Principle  <input type="checkbox"></li>
-				<li style="text-align: justify;">D: Dependency Inversion Principle <input type="checkbox"></li>
-			</ol>
+			#dropArea {
+				border: 2px dashed #ccc;
+				border-radius: 5px;
+				padding: 20px;
+				text-align: center;
+				margin: 20px auto;
+				width: 300px;
+				height: 200px;
+			}
 	
-			<input type="file" multiple>
-		</body>
-	</html>`;
+			#dropArea.highlight {
+				border-color: #66ccff;
+			}
+	
+			#fileInput {
+				display: none;
+			}
+	
+			/* Style for file input label */
+			label {
+				cursor: pointer;
+				background-color: #007bff;
+				color: #fff;
+				padding: 10px 20px;
+				border-radius: 5px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Config Panel</h1>
+
+		<ol>
+			<li><label><input type="checkbox"> S: Single Responsibility Principle</label></li>
+			<li><label><input type="checkbox"> O: Open-Closed Principle</label></li>
+			<li><label><input type="checkbox"> L: Liskov Substitution Principle</label></li>
+			<li><label><input type="checkbox"> I: Interface Segregation Principle</label></li>
+			<li><label><input type="checkbox"> D: Dependency Inversion Principle</label></li>
+		</ol>
+
+		<div id="dropArea">
+			<label for="fileInput">Drag & Drop files here or Browse</label>
+			<input type="file" id="fileInput" multiple">
+		</div>
+	</body>
+	</html>
+	`;
 }
 // Fetch all files in the workspace
 const fetchAllFiles = async () => {
@@ -146,8 +227,9 @@ And when I tell you "ALL FILES SENT", then you can continue processing the data 
 If there is a part violating the SOLID principles, in which file there is a violation? What is the line number in that file the violation occurs (THIS IS IMPORTANT), and then your suggestions for fixing it.`;
 const genAI = new generative_ai_1.GoogleGenerativeAI(apiKey_1.apiKey);
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-const chat = model.startChat();
+let chat;
 async function sendInitialPrompt() {
+    chat = model.startChat();
     const result = await chat.sendMessage(initialPrompt);
     return result.response.text();
 }
@@ -164,9 +246,12 @@ async function sendEndPrompt() {
 }
 exports.sendEndPrompt = sendEndPrompt;
 function beautifyAnswer(text) {
+    // Regex pattern to match text enclosed within **
     const pattern = /\*\*(.*?)\*\*/g;
-    const parsedText = text.replace(pattern, '<h1 style="color: #999999; text-align: center;>$1</h1>');
-    return `<p style="color: #666666; text-align: justify;>${parsedText}</p>`;
+    // Replace text enclosed within ** with <h1> tags
+    const parsedText = text.replace(pattern, '<h1>$1</h1>');
+    // Enclose the rest of the text with <p> tags
+    return `<p>${parsedText}</p>`;
 }
 exports.beautifyAnswer = beautifyAnswer;
 
