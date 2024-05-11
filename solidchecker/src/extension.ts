@@ -126,16 +126,16 @@ function getResultWebviewContent(answer: string) {
             margin: 20px 0;
         }
 
-    </style>
-</head>
-<body>
-    <h1 class="title">SolidChecker</h1>
-    <div class="container">
-        <h1>Result Panel</h1>
-        <p>${answer}</p>
-    </div>
-</body>
-</html>
+			</style>
+		</head>
+		<body>
+			<h1 class="title">SolidChecker</h1>
+			<div class="container">
+				<h1>Result Panel</h1>
+				<p>${answer}</p>
+			</div>
+		</body>
+		</html>
 
 
 
@@ -159,8 +159,8 @@ function getConfigWebviewContent() {
 
 			ol {
 				width: max-content;
-				list-style: none; /* Remove default list styles */
-				padding-left: 0; /* Remove default padding */
+				list-style: none; 
+				padding-left: 0; 
 			}
 
 			li {
