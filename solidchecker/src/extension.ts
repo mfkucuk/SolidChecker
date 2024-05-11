@@ -3,8 +3,6 @@ import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } f
 
 import * as path from 'path';
 import { readFileSync } from 'fs';
-import { Console, log } from 'console';
-import { isGeneratorFunction } from 'util/types';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
@@ -16,8 +14,17 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	if (workspaceFolder) {
 		const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
+		
+		let scFolderExists = false;
+		const rootFolder = await vscode.workspace.fs.readDirectory(workspaceFolder.uri);
+		for (const element in rootFolder) {
+			if (rootFolder[element][0] === '.solidchecker') {
+				scFolderExists = true;
+				break;
+			}
+		} 
 
-		if (! await vscode.workspace.fs.stat(scDirectoryUri)) {
+		if (! scFolderExists) {
 			vscode.workspace.fs.createDirectory(scDirectoryUri);
 
 			updateSettingsFile(scDirectoryUri);
@@ -37,6 +44,9 @@ export async function activate(context: vscode.ExtensionContext) {
 			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
 			const files = await fetchAllFiles(ignoreTemplateData.toString());
             
+			for (const file in files) {
+				console.log(file);
+			}
             
 			await sendInitialPrompt();
 
@@ -72,30 +82,28 @@ export async function activate(context: vscode.ExtensionContext) {
 		if(workspaceFolder) {
 			const SettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
 			const SettingsFile = await vscode.workspace.fs.readFile(SettingsUri);
-		const parsedJson = JSON.parse(SettingsFile.toString());
-		configPanel.webview.html = getConfigWebviewContent(parsedJson);
-		configPanel.webview.onDidReceiveMessage(
-			message => {
-				switch (message.command) {
-					case 'saveSettings':
-						
-						const newSettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
-						const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
-						vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
-						vscode.window.showInformationMessage('Settings saved successfully!');
-                        const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
-                    	updateConfigPanel(configPanel, context); 
-                        setIgnoreFile(message.settings, scDirectoryUri);
+			const parsedJson = JSON.parse(SettingsFile.toString());
+			configPanel.webview.html = getConfigWebviewContent(parsedJson);
+			configPanel.webview.onDidReceiveMessage(
+				message => {
+					switch (message.command) {
+						case 'saveSettings':
+							
+							const newSettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+							const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
+							vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
+							vscode.window.showInformationMessage('Settings saved successfully!');
+							const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
+							updateConfigPanel(configPanel, context); 
+							setIgnoreFile(message.settings, scDirectoryUri);
 
-						
-						break;
-				}
-			},
-			undefined,
-			context.subscriptions
-		);
-		
-			
+							
+							break;
+					}
+				},
+				undefined,
+				context.subscriptions
+			);		
 		}
 		
 	});
@@ -262,17 +270,12 @@ const fetchAllFiles = async (ignoreTemplateData:string): Promise<{ [fileName: st
 };
 
 function transformIgnoreFile(content: string): string {
-	// Split the file content into lines
-	const lines = content.split(/\r?\n/);  // Handle both Windows and Unix line endings
-  
-	// Filter out lines starting with a hashtag (#)
+	const lines = content.split(/\r?\n/);
+      
+	const filteredLines = lines.filter(line => !line.startsWith('#') && line !== '' );
     
-	const filteredLines = lines.filter(line => !line.startsWith('#') && line != "" );
-    
-	// Join the filtered lines with commas and enclose in curly brackets
-	return `{${filteredLines.join(',')}}`;
-    
-  }
+	return `{${filteredLines.join(',')}}`;    
+}
 
 async function updateSettingsFile(directoryUri: vscode.Uri) {
 	let settingsTemplateDataStr = '{';
