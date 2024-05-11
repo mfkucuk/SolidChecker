@@ -6,49 +6,26 @@ import { readFileSync } from 'fs';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.showInformationMessage('Congratulations, your extension "solidchecker" is now active!');
 
 	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
 
 	if (workspaceFolder) {
-		const newDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
-		vscode.workspace.fs.createDirectory(newDirectoryUri);
+		const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
 
-		let settingsTemplateDataStr = '{';
+		if (! await vscode.workspace.fs.stat(scDirectoryUri)) {
+			vscode.workspace.fs.createDirectory(scDirectoryUri);
 
-		for (const key in settingsTemplateData) {
-			if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
-				settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
-				continue;
-			}
+			updateSettingsFile(scDirectoryUri);
 
-			settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+			updateIgnoreFile(scDirectoryUri);
 		}
-
-		settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
-		settingsTemplateDataStr += '}'; 
-
-		const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
-		const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
-		vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
-
-
-		
-
-		const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
-
-
-		const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
-		const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
-		vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
 	}
 	else {
 		vscode.window.showErrorMessage('No workspace is open!');
 	}
-
-
 
 	let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
 
@@ -276,3 +253,31 @@ const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {
 
     return fileNamesAndContents;
 };
+
+async function updateSettingsFile(directoryUri: vscode.Uri) {
+	let settingsTemplateDataStr = '{';
+	
+	for (const key in settingsTemplateData) {
+		if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
+			settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
+			continue;
+		}
+
+		settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+	}
+
+	settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
+	settingsTemplateDataStr += '}'; 
+
+	const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
+	const newSettingsUri = vscode.Uri.joinPath(directoryUri, 'settings.json');
+	vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
+}
+
+async function updateIgnoreFile(directoryUri: vscode.Uri) {
+	const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
+	
+	const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
+	const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
+	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+}
