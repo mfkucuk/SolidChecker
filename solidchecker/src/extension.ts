@@ -33,9 +33,9 @@ export function activate(context: vscode.ExtensionContext) {
 		const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
 		vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
 
-		const ignoreTemplateData = readFileSync('./ignore_templates/.javaignoretemplate', 'utf-8');
+		// const ignoreTemplateData = readFileSync('./ignore_templates/.javaignoretemplate', 'utf-8');
 
-		const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
+		// const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
 		const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
 		vscode.workspace.fs.writeFile(newIgnoreUri, new Uint8Array(0));
 	}
@@ -75,8 +75,20 @@ export function activate(context: vscode.ExtensionContext) {
 			vscode.ViewColumn.One,
 			{},
 		);
+		
+		
+		const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+		if(workspaceFolder) {
+			const SettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+			const SettingsFile = await vscode.workspace.fs.readFile(SettingsUri);
+		const parsedJson = JSON.parse(SettingsFile.toString());
+		configPanel.webview.html = getConfigWebviewContent(parsedJson);
+			
+		}
+			
 
-		configPanel.webview.html = getConfigWebviewContent();
+
+		
 	});
 
 	context.subscriptions.push(runDisposable);
@@ -162,7 +174,7 @@ function getResultWebviewContent(answer: string) {
 }
 
 
-function getConfigWebviewContent() {
+function getConfigWebviewContent(settings: any) {
 	return `<!DOCTYPE html>
 	<html>
 	<head>
@@ -228,11 +240,11 @@ function getConfigWebviewContent() {
 		<h1>Config Panel</h1>
 
 		<ol>
-			<li><label><input type="checkbox"> S: Single Responsibility Principle</label></li>
-			<li><label><input type="checkbox"> O: Open-Closed Principle</label></li>
-			<li><label><input type="checkbox"> L: Liskov Substitution Principle</label></li>
-			<li><label><input type="checkbox"> I: Interface Segregation Principle</label></li>
-			<li><label><input type="checkbox"> D: Dependency Inversion Principle</label></li>
+		<li><label><input type="checkbox" ${settings.checkForS ? 'checked' : ''}> S: Single Responsibility Principle</label></li>
+		<li><label><input type="checkbox" ${settings.checkForO ? 'checked' : ''}> O: Open-Closed Principle</label></li>
+		<li><label><input type="checkbox" ${settings.checkForL ? 'checked' : ''}> L: Liskov Substitution Principle</label></li>
+		<li><label><input type="checkbox" ${settings.checkForI ? 'checked' : ''}> I: Interface Segregation Principle</label></li>
+		<li><label><input type="checkbox" ${settings.checkForD ? 'checked' : ''}> D: Dependency Inversion Principle</label></li>
 		</ol>
 
 		<div id="dropArea">
