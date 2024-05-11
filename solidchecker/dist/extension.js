@@ -53,10 +53,10 @@ function activate(context) {
         const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
         const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
         vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
-        const ignoreTemplateData = (0, fs_1.readFileSync)('./ignore_templates/.javaignoretemplate', 'utf-8');
+        const ignoreTemplateData = (0, fs_1.readFileSync)(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
         const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
         const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
-        vscode.workspace.fs.writeFile(newIgnoreUri, new Uint8Array(0));
+        vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
     }
     else {
         vscode.window.showErrorMessage('No workspace is open!');
@@ -240,7 +240,7 @@ function getConfigWebviewContent() {
 // Fetch all files in the workspace
 const fetchAllFiles = async () => {
     const fileNamesAndContents = {};
-    const files = await vscode.workspace.findFiles('**/*', '**/node_modules/**', 10000);
+    const files = await vscode.workspace.findFiles('**/*', '{}', 10000);
     await Promise.all(files.map(async (fileUri) => {
         const content = await vscode.workspace.fs.readFile(fileUri);
         const fileName = path.basename(fileUri.fsPath);
@@ -1484,7 +1484,7 @@ module.exports = require("fs");
 /* 7 */
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"projectType":"java","checkForS":true,"checkForO":true,"checkForL":true,"checkForI":true,"checkForD":true}');
+module.exports = /*#__PURE__*/JSON.parse('{"projectType":"python","checkForS":true,"checkForO":true,"checkForL":true,"checkForI":true,"checkForD":true}');
 
 /***/ })
 /******/ 	]);
