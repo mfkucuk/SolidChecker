@@ -1,7 +1,7 @@
 ##############################
 ## Java
 ##############################
-**/.mtj.tmp/
+**/.mtj.tmp
 **/*.class
 **/*.jar
 **/*.war
@@ -13,7 +13,7 @@
 ##############################
 ## Maven
 ##############################
-target/
+target
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -28,8 +28,8 @@ buildNumber.properties
 ##############################
 ## Gradle
 ##############################
-bin/
-build/
+bin
+build
 .gradle
 .gradletasknamecache
 gradle-app.setting
@@ -38,26 +38,26 @@ gradle-app.setting
 ##############################
 ## IntelliJ
 ##############################
-out/
-.idea/
-.idea_modules/
-*.iml
-*.ipr
-*.iws
+out
+.idea
+.idea_modules
+**/*.iml
+**/*.ipr
+**/*.iws
 
 ##############################
 ## Eclipse
 ##############################
-.settings/
-bin/
-tmp/
+.settings
+bin
+tmp
 .metadata
 .classpath
 .project
-*.tmp
-*.bak
-*.swp
-*~.nib
+**/*.tmp
+**/*.bak
+**/*.swp
+**/*~.nib
 local.properties
 .loadpath
 .factorypath
@@ -65,18 +65,18 @@ local.properties
 ##############################
 ## NetBeans
 ##############################
-nbproject/private/
-build/
-nbbuild/
-dist/
-nbdist/
+nbproject/private
+build
+nbbuild
+dist
+nbdist
 nbactions.xml
 nb-configuration.xml
 
 ##############################
 ## Visual Studio Code
 ##############################
-.vscode/
+.vscode
 .code-workspace
 
 ##############################
@@ -87,6 +87,6 @@ nb-configuration.xml
 ##############################
 ## Miscellaneous
 ##############################
-*.log
+**/*.log
 
 .solidchecker
