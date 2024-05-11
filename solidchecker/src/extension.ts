@@ -271,6 +271,7 @@ function transformIgnoreFile(content: string): string {
 	vscode.window.showInformationMessage(`{${filteredLines.join(',')}}`);
 	// Join the filtered lines with commas and enclose in curly brackets
 	return `{${filteredLines.join(',')}}`;
+    
   }
 
 async function updateSettingsFile(directoryUri: vscode.Uri) {
