@@ -76,8 +76,9 @@ export async function activate(context: vscode.ExtensionContext) {
 						const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
 						vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
 						vscode.window.showInformationMessage('Settings saved successfully!');
-						// CALL YOUR SOLIDCHECKER IGNORE FILE HERE
+                        const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
                     	updateConfigPanel(configPanel, context); 
+                        setIgnoreFile(message.settings, scDirectoryUri);
 
 						
 						break;
@@ -284,4 +285,12 @@ async function updateIgnoreFile(directoryUri: vscode.Uri) {
 	const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
 	const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
 	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+}
+
+async function setIgnoreFile(settings: any, directoryUri: vscode.Uri) {
+    const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settings.projectType}ignoretemplate`, 'utf-8');
+    const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
+	const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
+	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+
 }
