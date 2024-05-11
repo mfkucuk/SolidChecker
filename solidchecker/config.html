@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Solid Checker Config</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #008000;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        ol {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        select {
+            padding: 5px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        select:-moz-first-node
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #008000;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+        }
+
+        button:hover {
+            background-color: #004080;
+        }
+
+        div {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Config Panel</h1>
+        <ol>
+            <li><label><input type="checkbox" id="sPrinciple" ${settings.checkForS ? 'checked' : ''}> S: Single Responsibility Principle</label></li>
+            <li><label><input type="checkbox" id="oPrinciple" ${settings.checkForO ? 'checked' : ''}> O: Open-Closed Principle</label></li>
+            <li><label><input type="checkbox" id="lPrinciple" ${settings.checkForL ? 'checked' : ''}> L: Liskov Substitution Principle</label></li>
+            <li><label><input type="checkbox" id="iPrinciple" ${settings.checkForI ? 'checked' : ''}> I: Interface Segregation Principle</label></li>
+            <li><label><input type="checkbox" id="dPrinciple" ${settings.checkForD ? 'checked' : ''}> D: Dependency Inversion Principle</label></li>
+        </ol>
+        <div>
+            <label for="languageSelect">Select Language:</label>
+            <select id="languageSelect">
+                <option value="java" ${settings.projectType === "java" ? "selected" : ""}>Java</option>
+                <option value="python" ${settings.projectType === "python" ? "selected" : ""}>Python</option>
+                <option value="javascript" ${settings.projectType === "javascript" ? "selected" : ""}>JavaScript</option>
+                <option value="c" ${settings.projectType === "c" ? "selected" : ""}>C</option>
+                <option value="cpp" ${settings.projectType === "cpp" ? "selected" : ""}>C++</option>
+                <option value="csharp" ${settings.projectType === "csharp" ? "selected" : ""}>C#</option>
+            </select>
+        </div>
+        <button onclick="saveSettings()">Save Changes</button>
+    </div>
+    <script>
+        const vscode = acquireVsCodeApi();
+        function saveSettings() {
+            const settings = {
+                checkForS: document.getElementById('sPrinciple').checked,
+                checkForO: document.getElementById('oPrinciple').checked,
+                checkForL: document.getElementById('lPrinciple').checked,
+                checkForI: document.getElementById('iPrinciple').checked,
+                checkForD: document.getElementById('dPrinciple').checked,
+                projectType: document.getElementById('languageSelect').value
+            };
+            vscode.postMessage({ command: 'saveSettings', settings });
+        }
+    </script>
+</body>
+</html>
