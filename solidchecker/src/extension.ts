@@ -3,7 +3,7 @@ import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } f
 
 import * as path from 'path';
 import { readFileSync } from 'fs';
-import { log } from 'console';
+import { Console, log } from 'console';
 import { isGeneratorFunction } from 'util/types';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
@@ -36,6 +36,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			const ignoreUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scignore');
 			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
 			const files = await fetchAllFiles(ignoreTemplateData.toString());
+            
+            
 			await sendInitialPrompt();
 
 			for ( const [fileName, filePath] of Object.entries(files) ) {
@@ -52,8 +54,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			);
 			
 			answerPanel.webview.html = getResultWebviewContent(beautifyAnswer(answer));
-			vscode.window.showInformationMessage('gello')
-			vscode.window.showInformationMessage(files.toString());
 		}
 	});
 
@@ -78,7 +78,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			message => {
 				switch (message.command) {
 					case 'saveSettings':
-						console.log("hello");
+						
 						const newSettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
 						const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
 						vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
@@ -266,9 +266,9 @@ function transformIgnoreFile(content: string): string {
 	const lines = content.split(/\r?\n/);  // Handle both Windows and Unix line endings
   
 	// Filter out lines starting with a hashtag (#)
-	const filteredLines = lines.filter(line => !line.startsWith('#'));
-  
-	vscode.window.showInformationMessage(`{${filteredLines.join(',')}}`);
+    
+	const filteredLines = lines.filter(line => !line.startsWith('#') && line != "" );
+    
 	// Join the filtered lines with commas and enclose in curly brackets
 	return `{${filteredLines.join(',')}}`;
     
