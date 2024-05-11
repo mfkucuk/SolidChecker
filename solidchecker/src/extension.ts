@@ -46,17 +46,19 @@ export async function activate(context: vscode.ExtensionContext) {
                         
 			await sendInitialPrompt();
 
+			let fileCount = 0;
 			await vscode.window.withProgress({
 				location: vscode.ProgressLocation.Notification,
 				cancellable: false,
-				title: 'Running Solid Checker...'
+				title: 'Running Solid Checker'
 			}, async (progress) => {
 				
 				for ( const [fileName, filePath] of Object.entries(files) ) {
 					await sleep(1000);
 					await sendOneFilePrompt(fileName, filePath);
 					
-					progress.report({ increment: (1 / Object.entries(files).length) * 100 });
+					fileCount++;
+					progress.report({ increment: (1 / Object.entries(files).length) * 100, message: `Analyzing file ${fileCount} of ${Object.entries(files).length}` });
 				}
 			});
 
