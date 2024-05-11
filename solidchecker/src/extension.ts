@@ -3,6 +3,8 @@ import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } f
 
 import * as path from 'path';
 import { readFileSync } from 'fs';
+import { log } from 'console';
+import { isGeneratorFunction } from 'util/types';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
@@ -30,24 +32,29 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
 
-		const files = await fetchAllFiles();
+		if(workspaceFolder) {
+			const ignoreUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scignore');
+			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
+			const files = await fetchAllFiles(ignoreTemplateData.toString());
+			await sendInitialPrompt();
 
-		await sendInitialPrompt();
-
-		for ( const [fileName, filePath] of Object.entries(files) ) {
-			await sendOneFilePrompt(fileName, filePath);
+			for ( const [fileName, filePath] of Object.entries(files) ) {
+				await sendOneFilePrompt(fileName, filePath);
+			}
+	
+			const answer = await sendEndPrompt();
+	
+			const answerPanel = vscode.window.createWebviewPanel(
+				'runSolidChecker',
+				'Solid Checker',
+				vscode.ViewColumn.One,
+				{},
+			);
+			
+			answerPanel.webview.html = getResultWebviewContent(beautifyAnswer(answer));
+			vscode.window.showInformationMessage('gello')
+			vscode.window.showInformationMessage(files.toString());
 		}
-
-		const answer = await sendEndPrompt();
-
-		const answerPanel = vscode.window.createWebviewPanel(
-			'runSolidChecker',
-			'Solid Checker',
-			vscode.ViewColumn.One,
-			{},
-		);
-		
-		answerPanel.webview.html = getResultWebviewContent(beautifyAnswer(answer));
 	});
 
 	let configDisposable = vscode.commands.registerCommand('solidchecker.configSolidChecker', async () => {
@@ -90,9 +97,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		
 			
 		}
-			
-
-
 		
 	});
 
@@ -226,28 +230,26 @@ function getConfigWebviewContent(settings: any) {
     `;
 }
 
-
-
+// Fetch all files in the workspace
 
 async function updateConfigPanel(webviewPanel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
-    const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
     if (workspaceFolder) {
-        const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+		const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
         try {
-            const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
+			const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
             const settingsJson = JSON.parse(settingsContent.toString());
             webviewPanel.webview.html = getConfigWebviewContent(settingsJson);
         } catch (error) {
-            vscode.window.showErrorMessage('Failed to load settings: ' + error);
+			vscode.window.showErrorMessage('Failed to load settings: ' + error);
         }
     }
 }
 
-
-const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {
+const fetchAllFiles = async (ignoreTemplateData:string): Promise<{ [fileName: string]: string }> => {
     const fileNamesAndContents: { [fileName: string]: string } = {};
 
-    const files = await vscode.workspace.findFiles('**/*', '{}', 10000);
+    const files = await vscode.workspace.findFiles('**/*', transformIgnoreFile(ignoreTemplateData), 10000);
 
     await Promise.all(files.map(async (fileUri: vscode.Uri) => {
         const content = await vscode.workspace.fs.readFile(fileUri);
@@ -258,6 +260,18 @@ const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {
 
     return fileNamesAndContents;
 };
+
+function transformIgnoreFile(content: string): string {
+	// Split the file content into lines
+	const lines = content.split(/\r?\n/);  // Handle both Windows and Unix line endings
+  
+	// Filter out lines starting with a hashtag (#)
+	const filteredLines = lines.filter(line => !line.startsWith('#'));
+  
+	vscode.window.showInformationMessage(`{${filteredLines.join(',')}}`);
+	// Join the filtered lines with commas and enclose in curly brackets
+	return `{${filteredLines.join(',')}}`;
+  }
 
 async function updateSettingsFile(directoryUri: vscode.Uri) {
 	let settingsTemplateDataStr = '{';
