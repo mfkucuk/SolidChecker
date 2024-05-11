@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } from './gemini';
 
 import * as path from 'path';
+import { readFileSync } from 'fs';
+
+const settingsTemplateData = require('./settings_template/settings_template.json');
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -13,10 +16,26 @@ export function activate(context: vscode.ExtensionContext) {
 		const newDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
 		vscode.workspace.fs.createDirectory(newDirectoryUri);
 
-		//const settingsContent = new TextEncoder().
+		let settingsTemplateDataStr = '{';
+
+		for (const key in settingsTemplateData) {
+			if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
+				settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
+				continue;
+			}
+
+			settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+		}
+
+		settingsTemplateDataStr += '}'; 
+
+		const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
 		const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
-		vscode.workspace.fs.writeFile(newSettingsUri, new Uint8Array(0));
-		
+		vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
+
+		const ignoreTemplateData = readFileSync('./ignore_templates/.javaignoretemplate', 'utf-8');
+
+		const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
 		const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
 		vscode.workspace.fs.writeFile(newIgnoreUri, new Uint8Array(0));
 	}

@@ -33,15 +33,28 @@ exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(__webpack_require__(1));
 const gemini_1 = __webpack_require__(2);
 const path = __importStar(__webpack_require__(5));
+const fs_1 = __webpack_require__(6);
+const settingsTemplateData = __webpack_require__(7);
 function activate(context) {
     vscode.window.showInformationMessage('Congratulations, your extension "solidchecker" is now active!');
     const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
     if (workspaceFolder) {
         const newDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
         vscode.workspace.fs.createDirectory(newDirectoryUri);
-        //const settingsContent = new TextEncoder().
+        let settingsTemplateDataStr = '{';
+        for (const key in settingsTemplateData) {
+            if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
+                settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
+                continue;
+            }
+            settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+        }
+        settingsTemplateDataStr += '}';
+        const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
         const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
-        vscode.workspace.fs.writeFile(newSettingsUri, new Uint8Array(0));
+        vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
+        const ignoreTemplateData = (0, fs_1.readFileSync)('./ignore_templates/.javaignoretemplate', 'utf-8');
+        const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
         const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
         vscode.workspace.fs.writeFile(newIgnoreUri, new Uint8Array(0));
     }
@@ -1422,6 +1435,18 @@ exports.apiKey = 'AIzaSyBIRtYIEN0xhQGxYeKN0iD3-n8T-o-g-0w';
 /***/ ((module) => {
 
 module.exports = require("path");
+
+/***/ }),
+/* 6 */
+/***/ ((module) => {
+
+module.exports = require("fs");
+
+/***/ }),
+/* 7 */
+/***/ ((module) => {
+
+module.exports = /*#__PURE__*/JSON.parse('{"projectType":"java","checkForS":true,"checkForO":true,"checkForL":true,"checkForI":true,"checkForD":true}');
 
 /***/ })
 /******/ 	]);

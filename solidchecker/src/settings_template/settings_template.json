@@ -1,0 +1,8 @@
+{
+    "projectType": "java",
+    "checkForS": true,
+    "checkForO": true,
+    "checkForL": true,
+    "checkForI": true,
+    "checkForD": true
+}
