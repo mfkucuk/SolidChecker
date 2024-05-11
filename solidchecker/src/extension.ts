@@ -3,6 +3,8 @@ import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } f
 
 import * as path from 'path';
 import { readFileSync } from 'fs';
+import { log } from 'console';
+import { isGeneratorFunction } from 'util/types';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
@@ -35,10 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
 		vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
 
 
-		
-
 		const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
-
 
 		const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
 		const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
@@ -52,24 +51,29 @@ export function activate(context: vscode.ExtensionContext) {
 
 	let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
 
-		const files = await fetchAllFiles();
+		if(workspaceFolder) {
+			const ignoreUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scignore');
+			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
+			const files = await fetchAllFiles(ignoreTemplateData.toString());
+			await sendInitialPrompt();
 
-		await sendInitialPrompt();
-
-		for ( const [fileName, filePath] of Object.entries(files) ) {
-			await sendOneFilePrompt(fileName, filePath);
+			for ( const [fileName, filePath] of Object.entries(files) ) {
+				await sendOneFilePrompt(fileName, filePath);
+			}
+	
+			const answer = await sendEndPrompt();
+	
+			const answerPanel = vscode.window.createWebviewPanel(
+				'runSolidChecker',
+				'Solid Checker',
+				vscode.ViewColumn.One,
+				{},
+			);
+			
+			answerPanel.webview.html = getResultWebviewContent(beautifyAnswer(answer));
+			vscode.window.showInformationMessage('gello')
+			vscode.window.showInformationMessage(files.toString());
 		}
-
-		const answer = await sendEndPrompt();
-
-		const answerPanel = vscode.window.createWebviewPanel(
-			'runSolidChecker',
-			'Solid Checker',
-			vscode.ViewColumn.One,
-			{},
-		);
-		
-		answerPanel.webview.html = getResultWebviewContent(beautifyAnswer(answer));
 	});
 
 	let configDisposable = vscode.commands.registerCommand('solidchecker.configSolidChecker', async () => {
@@ -90,9 +94,6 @@ export function activate(context: vscode.ExtensionContext) {
 		configPanel.webview.html = getConfigWebviewContent(parsedJson);
 			
 		}
-			
-
-
 		
 	});
 
@@ -262,10 +263,10 @@ function getConfigWebviewContent(settings: any) {
 }
 
 // Fetch all files in the workspace
-const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {
+const fetchAllFiles = async (ignoreTemplateData:string): Promise<{ [fileName: string]: string }> => {
     const fileNamesAndContents: { [fileName: string]: string } = {};
 
-    const files = await vscode.workspace.findFiles('**/*', '{}', 10000);
+    const files = await vscode.workspace.findFiles('**/*', transformIgnoreFile(ignoreTemplateData), 10000);
 
     await Promise.all(files.map(async (fileUri: vscode.Uri) => {
         const content = await vscode.workspace.fs.readFile(fileUri);
@@ -276,3 +277,15 @@ const fetchAllFiles = async (): Promise<{ [fileName: string]: string }> => {
 
     return fileNamesAndContents;
 };
+
+function transformIgnoreFile(content: string): string {
+	// Split the file content into lines
+	const lines = content.split(/\r?\n/);  // Handle both Windows and Unix line endings
+  
+	// Filter out lines starting with a hashtag (#)
+	const filteredLines = lines.filter(line => !line.startsWith('#'));
+  
+	vscode.window.showInformationMessage(`{${filteredLines.join(',')}}`);
+	// Join the filtered lines with commas and enclose in curly brackets
+	return `{${filteredLines.join(',')}}`;
+  }
