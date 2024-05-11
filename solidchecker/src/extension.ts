@@ -27,6 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
 			settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
 		}
 
+		settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
 		settingsTemplateDataStr += '}'; 
 
 		const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
