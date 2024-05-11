@@ -48,7 +48,7 @@ export function beautifyAnswer(text: string): string {
     const pattern = /\*\*(.*?)\*\*/g;
 
     // Replace text enclosed within ** with <h1> tags
-    const parsedText = text.replace(pattern, '<h1>$1</h1>');
+    const parsedText = text.replace(pattern, '<h2>$1</h2>');
 
     // Enclose the rest of the text with <p> tags
     return `<p>${parsedText}</p>`;
