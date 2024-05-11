@@ -8,46 +8,27 @@ import { isGeneratorFunction } from 'util/types';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
 
 	vscode.window.showInformationMessage('Congratulations, your extension "solidchecker" is now active!');
 
 	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
 
 	if (workspaceFolder) {
-		const newDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
-		vscode.workspace.fs.createDirectory(newDirectoryUri);
+		const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
 
-		let settingsTemplateDataStr = '{';
+		if (! await vscode.workspace.fs.stat(scDirectoryUri)) {
+			vscode.workspace.fs.createDirectory(scDirectoryUri);
 
-		for (const key in settingsTemplateData) {
-			if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
-				settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
-				continue;
-			}
+			updateSettingsFile(scDirectoryUri);
 
-			settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+			updateIgnoreFile(scDirectoryUri);
 		}
 
-		settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
-		settingsTemplateDataStr += '}'; 
-
-		const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
-		const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
-		vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
-
-
-		const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
-
-		const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
-		const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
-		vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
 	}
 	else {
 		vscode.window.showErrorMessage('No workspace is open!');
 	}
-
-
 
 	let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
 
@@ -82,8 +63,9 @@ export function activate(context: vscode.ExtensionContext) {
 			'configSolidChecker',
 			'Solid Checker Config',
 			vscode.ViewColumn.One,
-			{},
+			{enableScripts: true},
 		);
+		
 		
 		
 		const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
@@ -92,6 +74,26 @@ export function activate(context: vscode.ExtensionContext) {
 			const SettingsFile = await vscode.workspace.fs.readFile(SettingsUri);
 		const parsedJson = JSON.parse(SettingsFile.toString());
 		configPanel.webview.html = getConfigWebviewContent(parsedJson);
+		configPanel.webview.onDidReceiveMessage(
+			message => {
+				switch (message.command) {
+					case 'saveSettings':
+						console.log("hello");
+						const newSettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+						const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
+						vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
+						vscode.window.showInformationMessage('Settings saved successfully!');
+						// CALL YOUR SOLIDCHECKER IGNORE FILE HERE
+                    	updateConfigPanel(configPanel, context); 
+
+						
+						break;
+				}
+			},
+			undefined,
+			context.subscriptions
+		);
+		
 			
 		}
 		
@@ -100,6 +102,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(runDisposable);
 	context.subscriptions.push(configDisposable);
 }
+
 
 export function deactivate() {}
 
@@ -179,90 +182,69 @@ function getResultWebviewContent(answer: string) {
     `;
 }
 
-
 function getConfigWebviewContent(settings: any) {
-	return `<!DOCTYPE html>
-	<html>
-	<head>
-		<title>Solid Checker Config</title>
-		<style>
-			body {
-				font-family: Arial, sans-serif;
-			}
-
-			h1 {
-				text-align: center;
-			}
-
-			ol {
-				width: max-content;
-				list-style: none; 
-				padding-left: 0; 
-			}
-
-			li {
-				text-align: justify;
-				margin-bottom: 10px; /* Add some spacing between list items */
-			}
-
-			label {
-				display: inline-flex; /* Align checkboxes horizontally */
-				align-items: center; /* Center items vertically */
-			}
-
-			input[type="checkbox"] {
-				margin-right: 5px; /* Add spacing between checkbox and label text */
-			}
-	
-			#dropArea {
-				border: 2px dashed #ccc;
-				border-radius: 5px;
-				padding: 20px;
-				text-align: center;
-				margin: 20px auto;
-				width: 300px;
-				height: 200px;
-			}
-	
-			#dropArea.highlight {
-				border-color: #66ccff;
-			}
-	
-			#fileInput {
-				display: none;
-			}
-	
-			/* Style for file input label */
-			label {
-				cursor: pointer;
-				background-color: #007bff;
-				color: #fff;
-				padding: 10px 20px;
-				border-radius: 5px;
-			}
-		</style>
-	</head>
-	<body>
-		<h1>Config Panel</h1>
-
-		<ol>
-		<li><label><input type="checkbox" ${settings.checkForS ? 'checked' : ''}> S: Single Responsibility Principle</label></li>
-		<li><label><input type="checkbox" ${settings.checkForO ? 'checked' : ''}> O: Open-Closed Principle</label></li>
-		<li><label><input type="checkbox" ${settings.checkForL ? 'checked' : ''}> L: Liskov Substitution Principle</label></li>
-		<li><label><input type="checkbox" ${settings.checkForI ? 'checked' : ''}> I: Interface Segregation Principle</label></li>
-		<li><label><input type="checkbox" ${settings.checkForD ? 'checked' : ''}> D: Dependency Inversion Principle</label></li>
-		</ol>
-
-		<div id="dropArea">
-			<label for="fileInput">Drag & Drop files here or Browse</label>
-			<input type="file" id="fileInput" multiple">
-		</div>
-	</body>
-	</html>
-	`;
+    return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Solid Checker Config</title>
+    </head>
+    <body>
+        <h1>Config Panel</h1>
+        <ol>
+            <li><label><input type="checkbox" id="sPrinciple" ${settings.checkForS ? 'checked' : ''}> S: Single Responsibility Principle</label></li>
+            <li><label><input type="checkbox" id="oPrinciple" ${settings.checkForO ? 'checked' : ''}> O: Open-Closed Principle</label></li>
+            <li><label><input type="checkbox" id="lPrinciple" ${settings.checkForL ? 'checked' : ''}> L: Liskov Substitution Principle</label></li>
+            <li><label><input type="checkbox" id="iPrinciple" ${settings.checkForI ? 'checked' : ''}> I: Interface Segregation Principle</label></li>
+            <li><label><input type="checkbox" id="dPrinciple" ${settings.checkForD ? 'checked' : ''}> D: Dependency Inversion Principle</label></li>
+        </ol>
+        <div>
+            <label for="languageSelect">Select Language:</label>
+            <select id="languageSelect">
+                <option value="java" ${settings.projectType === "java" ? "selected" : ""}>Java</option>
+                <option value="python" ${settings.projectType === "python" ? "selected" : ""}>Python</option>
+                <option value="javascript" ${settings.projectType === "javascript" ? "selected" : ""}>JavaScript</option>
+                <option value="c" ${settings.projectType === "c" ? "selected" : ""}>C</option>
+                <option value="cpp" ${settings.projectType === "cpp" ? "selected" : ""}>C++</option>
+                <option value="csharp" ${settings.projectType === "csharp" ? "selected" : ""}>C#</option>
+            </select>
+        </div>
+        <button onclick="saveSettings()">Save Changes</button>
+        <script>
+            const vscode = acquireVsCodeApi();
+            function saveSettings() {
+                const settings = {
+                    checkForS: document.getElementById('sPrinciple').checked,
+                    checkForO: document.getElementById('oPrinciple').checked,
+                    checkForL: document.getElementById('lPrinciple').checked,
+                    checkForI: document.getElementById('iPrinciple').checked,
+                    checkForD: document.getElementById('dPrinciple').checked,
+                    projectType: document.getElementById('languageSelect').value
+                };
+                vscode.postMessage({ command: 'saveSettings', settings });
+            }
+        </script>
+    </body>
+    </html>
+    `;
 }
 
 // Fetch all files in the workspace
+
+async function updateConfigPanel(webviewPanel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+    if (workspaceFolder) {
+		const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+        try {
+			const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
+            const settingsJson = JSON.parse(settingsContent.toString());
+            webviewPanel.webview.html = getConfigWebviewContent(settingsJson);
+        } catch (error) {
+			vscode.window.showErrorMessage('Failed to load settings: ' + error);
+        }
+    }
+}
+
 const fetchAllFiles = async (ignoreTemplateData:string): Promise<{ [fileName: string]: string }> => {
     const fileNamesAndContents: { [fileName: string]: string } = {};
 
@@ -289,3 +271,31 @@ function transformIgnoreFile(content: string): string {
 	// Join the filtered lines with commas and enclose in curly brackets
 	return `{${filteredLines.join(',')}}`;
   }
+
+async function updateSettingsFile(directoryUri: vscode.Uri) {
+	let settingsTemplateDataStr = '{';
+	
+	for (const key in settingsTemplateData) {
+		if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
+			settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
+			continue;
+		}
+
+		settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+	}
+
+	settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
+	settingsTemplateDataStr += '}'; 
+
+	const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
+	const newSettingsUri = vscode.Uri.joinPath(directoryUri, 'settings.json');
+	vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
+}
+
+async function updateIgnoreFile(directoryUri: vscode.Uri) {
+	const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
+	
+	const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
+	const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
+	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+}
