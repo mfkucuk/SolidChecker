@@ -1,23 +1,32 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } from './gemini';
 
 import * as path from 'path';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "solidchecker" is now active!');
+	vscode.window.showInformationMessage('Congratulations, your extension "solidchecker" is now active!');
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
+	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+
+	if (workspaceFolder) {
+		const newDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
+		vscode.workspace.fs.createDirectory(newDirectoryUri);
+
+		//const settingsContent = new TextEncoder().
+		const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
+		vscode.workspace.fs.writeFile(newSettingsUri, new Uint8Array(0));
+		
+		const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
+		vscode.workspace.fs.writeFile(newIgnoreUri, new Uint8Array(0));
+	}
+	else {
+		vscode.window.showErrorMessage('No workspace is open!');
+	}
+
+
+
 	let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
-		// The code you place here will be executed every time your command is executed
 
 		const files = await fetchAllFiles();
 
@@ -55,7 +64,6 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(configDisposable);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
 
 function getResultWebviewContent(answer: string) {
@@ -88,7 +96,7 @@ function getResultWebviewContent(answer: string) {
 	</head>
 	<body style="font-family: Arial, sans-serif; padding: 20px;">
 		<div className='container' style="max-width: 600px; margin: 0 auto;">
-			<h1>Result Panel</h1>
+			<h1>Fuck Panel</h1>
 			${answer}
 		</div>
 	</body>
@@ -159,7 +167,7 @@ function getConfigWebviewContent() {
 		</style>
 	</head>
 	<body>
-		<h1>Config Panel</h1>
+		<h1>FUCK Panel</h1>
 
 		<ol>
 			<li><label><input type="checkbox"> S: Single Responsibility Principle</label></li>
