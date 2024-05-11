@@ -98,7 +98,7 @@ function getResultWebviewContent(answer) {
 	</head>
 	<body style="font-family: Arial, sans-serif; padding: 20px;">
 		<div className='container' style="max-width: 600px; margin: 0 auto;">
-			<h1>Fuck Panel</h1>
+			<h1>Result Panel</h1>
 			${answer}
 		</div>
 	</body>
@@ -168,7 +168,7 @@ function getConfigWebviewContent() {
 		</style>
 	</head>
 	<body>
-		<h1>FUCK Panel</h1>
+		<h1>Config Panel</h1>
 
 		<ol>
 			<li><label><input type="checkbox"> S: Single Responsibility Principle</label></li>
