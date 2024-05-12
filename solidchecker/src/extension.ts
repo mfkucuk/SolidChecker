@@ -1,13 +1,17 @@
 import * as vscode from 'vscode';
 import { beautifyAnswer, sendEndPrompt, sendInitialPrompt, sendOneFilePrompt } from './gemini';
 
-import * as path from 'path';
-import { readFileSync } from 'fs';
-
 // panels
 import { welcomeWebviewPanel } from './panel/welcomeWebviewPanel';
 import { resultWebviewPanel } from './panel/resultWebviewPanel';
-import { configWebviewPanel } from './panel/configWebviewPanel';
+import { configWebviewPanel, updateConfigPanel } from './panel/configWebviewPanel';
+
+// lib
+import { updateIncludeFile } from './lib/updateIncludeFile';
+import { updateIgnoreFile } from './lib/updateIgnoreFile';
+import { updateSettingsFile } from './lib/updateSettingsFile';
+import { fetchAllFiles } from './lib/fileManipulation';
+import { sleep } from './lib/sleep';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
@@ -32,11 +36,11 @@ export async function activate(context: vscode.ExtensionContext) {
 		if (!scFolderExists) {
 			vscode.workspace.fs.createDirectory(scDirectoryUri);
 
-			updateSettingsFile(scDirectoryUri);
+			updateSettingsFile(settingsTemplateData, scDirectoryUri);
 
-			updateIgnoreFile(scDirectoryUri);
+			updateIgnoreFile(settingsTemplateData, scDirectoryUri);
 
-			updateIncludeFile(scDirectoryUri);
+			updateIncludeFile(settingsTemplateData, scDirectoryUri);
 		}
 
 		const welcomePage = vscode.window.createWebviewPanel(
@@ -88,8 +92,6 @@ export async function activate(context: vscode.ExtensionContext) {
 				}
 			});
 
-			
-	
 			const answer = await sendEndPrompt();
 	
 			const answerPanel = vscode.window.createWebviewPanel(
@@ -112,8 +114,6 @@ export async function activate(context: vscode.ExtensionContext) {
 			{enableScripts: true},
 		);
 		
-		
-		
 		const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
 		if(workspaceFolder) {
 			const SettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
@@ -123,18 +123,16 @@ export async function activate(context: vscode.ExtensionContext) {
 			configPanel.webview.onDidReceiveMessage(
 				message => {
 					switch (message.command) {
-						case 'saveSettings':
-							
+						case 'saveSettings':			
 							const newSettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
 							const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
 							vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
 							vscode.window.showInformationMessage('Settings saved successfully!');
 							const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
 							updateConfigPanel(configPanel, context); 
-							setIgnoreFile(message.settings, scDirectoryUri);
-							setIncludeFile(message.settings, scDirectoryUri);
+							updateIgnoreFile(message.settings, scDirectoryUri);
+							updateIncludeFile(message.settings, scDirectoryUri);
 
-							
 							break;
 					}
 				},
@@ -149,100 +147,4 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(configDisposable);
 }
 
-
 export function deactivate() {}
-
-
-
-// Fetch all files in the workspace
-
-async function updateConfigPanel(webviewPanel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
-	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
-    if (workspaceFolder) {
-		const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
-        try {
-			const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
-            const settingsJson = JSON.parse(settingsContent.toString());
-            webviewPanel.webview.html = configWebviewPanel(settingsJson);
-        } catch (error) {
-			vscode.window.showErrorMessage('Failed to load settings: ' + error);
-        }
-    }
-}
-
-const fetchAllFiles = async (includeTemplateData:string, ignoreTemplateData:string): Promise<{ [fileName: string]: string }> => {
-    const fileNamesAndContents: { [fileName: string]: string } = {};
-
-    const files = await vscode.workspace.findFiles(transformIgnoreFile(includeTemplateData), transformIgnoreFile(ignoreTemplateData), 10000);
-
-    await Promise.all(files.map(async (fileUri: vscode.Uri) => {
-        const content = await vscode.workspace.fs.readFile(fileUri);
-		const fileName = path.basename(fileUri.fsPath);
-
-        fileNamesAndContents[fileName] = content.toString();
-    }));
-
-    return fileNamesAndContents;
-};
-
-function transformIgnoreFile(content: string): string {
-	const lines = content.split(/\r?\n/);
-      
-	const filteredLines = lines.filter(line => !line.startsWith('#') && line !== '' );
-    
-	return `{${filteredLines.join(',')}}`;    
-}
-
-async function updateSettingsFile(directoryUri: vscode.Uri) {
-	let settingsTemplateDataStr = '{';
-	
-	for (const key in settingsTemplateData) {
-		if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
-			settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
-			continue;
-		}
-
-		settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
-	}
-
-	settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
-	settingsTemplateDataStr += '}'; 
-
-	const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
-	const newSettingsUri = vscode.Uri.joinPath(directoryUri, 'settings.json');
-	vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
-}
-
-async function updateIgnoreFile(directoryUri: vscode.Uri) {
-	const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
-	
-	const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
-	const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
-	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
-}
-
-async function setIgnoreFile(settings: any, directoryUri: vscode.Uri) {
-    const ignoreTemplateData = readFileSync(`${__dirname}/../src/ignore_templates/.${settings.projectType}ignoretemplate`, 'utf-8');
-    const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
-	const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
-	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
-
-}
-
-async function updateIncludeFile(directoryUri: vscode.Uri) {
-	const includeTemplateData = readFileSync(`${__dirname}/../src/include_templates/.${settingsTemplateData.projectType}includetemplate`, 'utf-8');
-	
-	const includeContent = new TextEncoder().encode(includeTemplateData);
-	const newIncludeUri = vscode.Uri.joinPath(directoryUri, '.scinclude');
-	vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
-}
-
-async function setIncludeFile(settings: any, directoryUri: vscode.Uri) {
-    const includeTemplateData = readFileSync(`${__dirname}/../src/include_templates/.${settings.projectType}includetemplate`, 'utf-8');
-    const includeContent = new TextEncoder().encode(includeTemplateData);
-	const newIncludeUri = vscode.Uri.joinPath(directoryUri, '.scinclude');
-	vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
-
-}
-
-export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));

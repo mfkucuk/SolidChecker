@@ -1,3 +1,5 @@
+import * as vscode from 'vscode';
+
 export function configWebviewPanel(settings: any) {
     return `
 	<!DOCTYPE html>
@@ -129,4 +131,19 @@ export function configWebviewPanel(settings: any) {
 	</body>
 	</html>
     `;
+}
+
+
+export async function updateConfigPanel(webviewPanel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
+	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+    if (workspaceFolder) {
+		const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+        try {
+			const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
+            const settingsJson = JSON.parse(settingsContent.toString());
+            webviewPanel.webview.html = configWebviewPanel(settingsJson);
+        } catch (error) {
+			vscode.window.showErrorMessage('Failed to load settings: ' + error);
+        }
+    }
 }
