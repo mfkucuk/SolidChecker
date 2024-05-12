@@ -64,13 +64,22 @@ export function beautifyAnswer(text: string): string {
 
     const codePattern = /```(.*?)```/gs;
 
+    const subHeadPattern = /!!(.*?)!!/g;
+
     const bulletPointPattern = /\*(.*?)/g;
+
+    const classPattern = /`(.*?)`/g;
 
     let parsedText = text.replace(boldPattern, '<h2>$1</h2>');
 
     parsedText = parsedText.replace(codePattern, '<div class="code-container"><pre>$1</pre></div>');
 
-    parsedText = parsedText.replace(bulletPointPattern, '<ul><li>$1</li></ul>');
+    parsedText = parsedText.replace(subHeadPattern, '<h3>$1</h3>');
+
+    parsedText = parsedText.replace(bulletPointPattern, '');
+
+    parsedText = parsedText.replace(classPattern, '<span class="method">$1</span>');
+    
 
     return `<p>${parsedText}</p>`;
 }

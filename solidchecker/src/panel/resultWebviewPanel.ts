@@ -54,6 +54,11 @@ export function resultWebviewPanel(answer: string) {
 				font-family: 'Courier New', Courier, monospace;
 				color: #9CFA54;
 			}
+			.method {
+				font-weight: bold;
+				color: #007bff; 
+				font-family: monospace;
+			}
 		</style>
 	</head>
 	<body>
