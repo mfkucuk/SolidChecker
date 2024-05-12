@@ -11,8 +11,10 @@ To run the extension, follow these steps:
 
 ## How to use
 There are two main commands use can run using the Command Palette (<kbd>control</kbd> + <kbd>shift</kbd> + <kbd>p</kbd>):
-* **Run: Solid Checker** and,
-* **Config: SolidChecker**
+* **Run: Solid Checker** (<kbd>control</kbd> + <kbd>alt</kbd> + <kbd>r</kbd>) and,
+* **Config: SolidChecker** (<kbd>control</kbd> + <kbd>alt</kbd> + <kbd>c</kbd>)
+
+Also, you can run config command by clicking on the **wrench icon** and run command by clicking on the **robot icon**.
 
 ### Config: SolidChecker command
 This command will open the following panel:
