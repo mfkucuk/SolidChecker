@@ -17,7 +17,7 @@ const settingsTemplateData = require('./settings_template/settings_template.json
 
 export async function activate(context: vscode.ExtensionContext) {
 
-	vscode.window.showInformationMessage('SolidChecker extention is active!');
+	vscode.window.showInformationMessage('SolidChecker extension is active!');
 
 	const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
 
