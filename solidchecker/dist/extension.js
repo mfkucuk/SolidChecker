@@ -29,51 +29,84 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.deactivate = exports.activate = void 0;
+exports.sleep = exports.deactivate = exports.activate = void 0;
 const vscode = __importStar(__webpack_require__(1));
 const gemini_1 = __webpack_require__(2);
 const path = __importStar(__webpack_require__(5));
 const fs_1 = __webpack_require__(6);
 const settingsTemplateData = __webpack_require__(7);
-function activate(context) {
+async function activate(context) {
     vscode.window.showInformationMessage('Congratulations, your extension "solidchecker" is now active!');
     const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
     if (workspaceFolder) {
-        const newDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
-        vscode.workspace.fs.createDirectory(newDirectoryUri);
-        let settingsTemplateDataStr = '{';
-        for (const key in settingsTemplateData) {
-            if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
-                settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
-                continue;
+        const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
+        let scFolderExists = false;
+        const rootFolder = await vscode.workspace.fs.readDirectory(workspaceFolder.uri);
+        for (const element in rootFolder) {
+            if (rootFolder[element][0] === '.solidchecker') {
+                scFolderExists = true;
+                break;
             }
-            settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
         }
-        settingsTemplateDataStr += '}';
-        const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
-        const newSettingsUri = vscode.Uri.joinPath(newDirectoryUri, 'settings.json');
-        vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
-        const ignoreTemplateData = (0, fs_1.readFileSync)(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
-        const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
-        const newIgnoreUri = vscode.Uri.joinPath(newDirectoryUri, '.scignore');
-        vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+        if (!scFolderExists) {
+            vscode.workspace.fs.createDirectory(scDirectoryUri);
+            updateSettingsFile(scDirectoryUri);
+            updateIgnoreFile(scDirectoryUri);
+            updateIncludeFile(scDirectoryUri);
+        }
     }
     else {
         vscode.window.showErrorMessage('No workspace is open!');
     }
     let runDisposable = vscode.commands.registerCommand('solidchecker.runSolidChecker', async () => {
-        const files = await fetchAllFiles();
-        await (0, gemini_1.sendInitialPrompt)();
-        for (const [fileName, filePath] of Object.entries(files)) {
-            await (0, gemini_1.sendOneFilePrompt)(fileName, filePath);
+        if (workspaceFolder) {
+            const ignoreUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scignore');
+            const includeUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scinclude');
+            const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
+            const includeTemplateData = await vscode.workspace.fs.readFile(includeUri);
+            const files = await fetchAllFiles(includeTemplateData.toString(), ignoreTemplateData.toString());
+            await (0, gemini_1.sendInitialPrompt)();
+            let fileCount = 0;
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                cancellable: false,
+                title: 'Running Solid Checker'
+            }, async (progress) => {
+                for (const [fileName, filePath] of Object.entries(files)) {
+                    await (0, exports.sleep)(1000);
+                    await (0, gemini_1.sendOneFilePrompt)(fileName, filePath);
+                    fileCount++;
+                    progress.report({ increment: (1 / Object.entries(files).length) * 100, message: `Analyzing file ${fileCount} of ${Object.entries(files).length}` });
+                }
+            });
+            const answer = await (0, gemini_1.sendEndPrompt)();
+            const answerPanel = vscode.window.createWebviewPanel('runSolidChecker', 'Solid Checker', vscode.ViewColumn.One, {});
+            answerPanel.webview.html = getResultWebviewContent((0, gemini_1.beautifyAnswer)(answer));
         }
-        const answer = await (0, gemini_1.sendEndPrompt)();
-        const answerPanel = vscode.window.createWebviewPanel('runSolidChecker', 'Solid Checker', vscode.ViewColumn.One, {});
-        answerPanel.webview.html = getResultWebviewContent((0, gemini_1.beautifyAnswer)(answer));
     });
     let configDisposable = vscode.commands.registerCommand('solidchecker.configSolidChecker', async () => {
-        const configPanel = vscode.window.createWebviewPanel('configSolidChecker', 'Solid Checker Config', vscode.ViewColumn.One, {});
-        configPanel.webview.html = getConfigWebviewContent();
+        const configPanel = vscode.window.createWebviewPanel('configSolidChecker', 'Solid Checker Config', vscode.ViewColumn.One, { enableScripts: true });
+        const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+        if (workspaceFolder) {
+            const SettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+            const SettingsFile = await vscode.workspace.fs.readFile(SettingsUri);
+            const parsedJson = JSON.parse(SettingsFile.toString());
+            configPanel.webview.html = getConfigWebviewContent(parsedJson);
+            configPanel.webview.onDidReceiveMessage(message => {
+                switch (message.command) {
+                    case 'saveSettings':
+                        const newSettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+                        const newSettingsContent = new TextEncoder().encode(JSON.stringify(message.settings, null, 4));
+                        vscode.workspace.fs.writeFile(newSettingsUri, newSettingsContent);
+                        vscode.window.showInformationMessage('Settings saved successfully!');
+                        const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
+                        updateConfigPanel(configPanel, context);
+                        setIgnoreFile(message.settings, scDirectoryUri);
+                        setIncludeFile(message.settings, scDirectoryUri);
+                        break;
+                }
+            }, undefined, context.subscriptions);
+        }
     });
     context.subscriptions.push(runDisposable);
     context.subscriptions.push(configDisposable);
@@ -156,91 +189,142 @@ function getResultWebviewContent(answer) {
 
     `;
 }
-function getConfigWebviewContent() {
-    return `<!DOCTYPE html>
+function getConfigWebviewContent(settings) {
+    return `
+	<!DOCTYPE html>
 	<html>
 	<head>
 		<title>Solid Checker Config</title>
 		<style>
 			body {
 				font-family: Arial, sans-serif;
+				background-color: #f4f4f4;
+				padding: 20px;
+				display: flex;
+				justify-content: center;
+				align-items: flex-start;
+				min-height: 100vh;
+			}
+
+			.container {
+				max-width: 600px;
+				width: 100%;
 			}
 
 			h1 {
+				color: #008000;
+				margin-bottom: 20px;
 				text-align: center;
 			}
 
 			ol {
-				width: max-content;
-				list-style: none; 
-				padding-left: 0; 
+				list-style-type: none;
+				padding: 0;
 			}
 
 			li {
-				text-align: justify;
-				margin-bottom: 10px; /* Add some spacing between list items */
+				margin-bottom: 10px;
+				color: black;
 			}
 
 			label {
-				display: inline-flex; /* Align checkboxes horizontally */
-				align-items: center; /* Center items vertically */
+				display: block;
+				cursor: pointer;
 			}
 
 			input[type="checkbox"] {
-				margin-right: 5px; /* Add spacing between checkbox and label text */
+				margin-right: 10px;
 			}
-	
-			#dropArea {
-				border: 2px dashed #ccc;
+
+			select {
+				padding: 5px;
+				font-size: 16px;
+				border: 1px solid #ccc;
 				border-radius: 5px;
-				padding: 20px;
-				text-align: center;
-				margin: 20px auto;
-				width: 300px;
-				height: 200px;
 			}
-	
-			#dropArea.highlight {
-				border-color: #66ccff;
-			}
-	
-			#fileInput {
-				display: none;
-			}
-	
-			/* Style for file input label */
-			label {
-				cursor: pointer;
-				background-color: #007bff;
-				color: #fff;
+
+			select:-moz-first-node
+
+			button {
 				padding: 10px 20px;
+				font-size: 16px;
+				background-color: #008000;
+				color: #fff;
+				border: none;
 				border-radius: 5px;
+				cursor: pointer;
+				display: block;
+				margin: 0 auto;
+			}
+
+			button:hover {
+				background-color: #004080;
+			}
+
+			div {
+				margin-bottom: 20px;
 			}
 		</style>
 	</head>
 	<body>
-		<h1>Config Panel</h1>
-
-		<ol>
-			<li><label><input type="checkbox"> S: Single Responsibility Principle</label></li>
-			<li><label><input type="checkbox"> O: Open-Closed Principle</label></li>
-			<li><label><input type="checkbox"> L: Liskov Substitution Principle</label></li>
-			<li><label><input type="checkbox"> I: Interface Segregation Principle</label></li>
-			<li><label><input type="checkbox"> D: Dependency Inversion Principle</label></li>
-		</ol>
-
-		<div id="dropArea">
-			<label for="fileInput">Drag & Drop files here or Browse</label>
-			<input type="file" id="fileInput" multiple">
+		<div class="container">
+			<h1>Config Panel</h1>
+			<ol>
+				<li><label><input type="checkbox" id="sPrinciple" ${settings.checkForS ? 'checked' : ''}> S: Single Responsibility Principle</label></li>
+				<li><label><input type="checkbox" id="oPrinciple" ${settings.checkForO ? 'checked' : ''}> O: Open-Closed Principle</label></li>
+				<li><label><input type="checkbox" id="lPrinciple" ${settings.checkForL ? 'checked' : ''}> L: Liskov Substitution Principle</label></li>
+				<li><label><input type="checkbox" id="iPrinciple" ${settings.checkForI ? 'checked' : ''}> I: Interface Segregation Principle</label></li>
+				<li><label><input type="checkbox" id="dPrinciple" ${settings.checkForD ? 'checked' : ''}> D: Dependency Inversion Principle</label></li>
+			</ol>
+			<div>
+				<label for="languageSelect">Select Language:</label>
+				<select id="languageSelect">
+					<option value="java" ${settings.projectType === "java" ? "selected" : ""}>Java</option>
+					<option value="python" ${settings.projectType === "python" ? "selected" : ""}>Python</option>
+					<option value="javascript" ${settings.projectType === "javascript" ? "selected" : ""}>JavaScript</option>
+					<option value="c" ${settings.projectType === "c" ? "selected" : ""}>C</option>
+					<option value="cpp" ${settings.projectType === "cpp" ? "selected" : ""}>C++</option>
+					<option value="csharp" ${settings.projectType === "csharp" ? "selected" : ""}>C#</option>
+				</select>
+			</div>
+			<button onclick="saveSettings()">Save Changes</button>
 		</div>
+		<script>
+			const vscode = acquireVsCodeApi();
+			function saveSettings() {
+				const settings = {
+					checkForS: document.getElementById('sPrinciple').checked,
+					checkForO: document.getElementById('oPrinciple').checked,
+					checkForL: document.getElementById('lPrinciple').checked,
+					checkForI: document.getElementById('iPrinciple').checked,
+					checkForD: document.getElementById('dPrinciple').checked,
+					projectType: document.getElementById('languageSelect').value
+				};
+				vscode.postMessage({ command: 'saveSettings', settings });
+			}
+		</script>
 	</body>
 	</html>
-	`;
+    `;
 }
 // Fetch all files in the workspace
-const fetchAllFiles = async () => {
+async function updateConfigPanel(webviewPanel, context) {
+    const workspaceFolder = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0];
+    if (workspaceFolder) {
+        const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+        try {
+            const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
+            const settingsJson = JSON.parse(settingsContent.toString());
+            webviewPanel.webview.html = getConfigWebviewContent(settingsJson);
+        }
+        catch (error) {
+            vscode.window.showErrorMessage('Failed to load settings: ' + error);
+        }
+    }
+}
+const fetchAllFiles = async (includeTemplateData, ignoreTemplateData) => {
     const fileNamesAndContents = {};
-    const files = await vscode.workspace.findFiles('**/*', '{}', 10000);
+    const files = await vscode.workspace.findFiles(transformIgnoreFile(includeTemplateData), transformIgnoreFile(ignoreTemplateData), 10000);
     await Promise.all(files.map(async (fileUri) => {
         const content = await vscode.workspace.fs.readFile(fileUri);
         const fileName = path.basename(fileUri.fsPath);
@@ -248,6 +332,52 @@ const fetchAllFiles = async () => {
     }));
     return fileNamesAndContents;
 };
+function transformIgnoreFile(content) {
+    const lines = content.split(/\r?\n/);
+    const filteredLines = lines.filter(line => !line.startsWith('#') && line !== '');
+    return `{${filteredLines.join(',')}}`;
+}
+async function updateSettingsFile(directoryUri) {
+    let settingsTemplateDataStr = '{';
+    for (const key in settingsTemplateData) {
+        if (typeof settingsTemplateData[key] === 'boolean' || typeof settingsTemplateData[key] === 'number') {
+            settingsTemplateDataStr += `"${key}": ${settingsTemplateData[key]},`;
+            continue;
+        }
+        settingsTemplateDataStr += `"${key}": "${settingsTemplateData[key]}",`;
+    }
+    settingsTemplateDataStr = settingsTemplateDataStr.slice(0, settingsTemplateDataStr.length - 1);
+    settingsTemplateDataStr += '}';
+    const settingsContent = new TextEncoder().encode(settingsTemplateDataStr);
+    const newSettingsUri = vscode.Uri.joinPath(directoryUri, 'settings.json');
+    vscode.workspace.fs.writeFile(newSettingsUri, settingsContent);
+}
+async function updateIgnoreFile(directoryUri) {
+    const ignoreTemplateData = (0, fs_1.readFileSync)(`${__dirname}/../src/ignore_templates/.${settingsTemplateData.projectType}ignoretemplate`, 'utf-8');
+    const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
+    const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
+    vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+}
+async function setIgnoreFile(settings, directoryUri) {
+    const ignoreTemplateData = (0, fs_1.readFileSync)(`${__dirname}/../src/ignore_templates/.${settings.projectType}ignoretemplate`, 'utf-8');
+    const ignoreContent = new TextEncoder().encode(ignoreTemplateData);
+    const newIgnoreUri = vscode.Uri.joinPath(directoryUri, '.scignore');
+    vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
+}
+async function updateIncludeFile(directoryUri) {
+    const includeTemplateData = (0, fs_1.readFileSync)(`${__dirname}/../src/include_templates/.${settingsTemplateData.projectType}includetemplate`, 'utf-8');
+    const includeContent = new TextEncoder().encode(includeTemplateData);
+    const newIncludeUri = vscode.Uri.joinPath(directoryUri, '.scinclude');
+    vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
+}
+async function setIncludeFile(settings, directoryUri) {
+    const includeTemplateData = (0, fs_1.readFileSync)(`${__dirname}/../src/include_templates/.${settings.projectType}includetemplate`, 'utf-8');
+    const includeContent = new TextEncoder().encode(includeTemplateData);
+    const newIncludeUri = vscode.Uri.joinPath(directoryUri, '.scinclude');
+    vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
+}
+const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay));
+exports.sleep = sleep;
 
 
 /***/ }),
@@ -1465,7 +1595,7 @@ exports.POSSIBLE_ROLES = POSSIBLE_ROLES;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.apiKey = void 0;
-exports.apiKey = 'AIzaSyBIRtYIEN0xhQGxYeKN0iD3-n8T-o-g-0w';
+exports.apiKey = "AIzaSyCaCI2MkByhzGOqVl9EDhUjTfwkbJzb6kU";
 
 
 /***/ }),
