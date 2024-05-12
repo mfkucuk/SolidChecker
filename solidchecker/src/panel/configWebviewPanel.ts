@@ -1,4 +1,4 @@
-export function configWebviewContent(settings: any) {
+export function configWebviewPanel(settings: any) {
     return `
 	<!DOCTYPE html>
 	<html>

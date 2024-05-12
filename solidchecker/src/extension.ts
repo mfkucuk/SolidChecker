@@ -6,8 +6,8 @@ import { readFileSync } from 'fs';
 
 // panels
 import { welcomeWebviewPanel } from './panel/welcomeWebviewPanel';
-import { resultWebviewContent } from './panel/resultWebviewPanel';
-import { configWebviewContent } from './panel/configWebviewContent';
+import { resultWebviewPanel } from './panel/resultWebviewPanel';
+import { configWebviewPanel } from './panel/configWebviewPanel';
 
 const settingsTemplateData = require('./settings_template/settings_template.json');
 
@@ -95,7 +95,7 @@ export async function activate(context: vscode.ExtensionContext) {
 				{},
 			);
 			
-			answerPanel.webview.html = resultWebviewContent(beautifyAnswer(answer));
+			answerPanel.webview.html = resultWebviewPanel(beautifyAnswer(answer));
 		}
 	});
 
@@ -115,7 +115,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			const SettingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
 			const SettingsFile = await vscode.workspace.fs.readFile(SettingsUri);
 			const parsedJson = JSON.parse(SettingsFile.toString());
-			configPanel.webview.html = configWebviewContent(parsedJson);
+			configPanel.webview.html = configWebviewPanel(parsedJson);
 			configPanel.webview.onDidReceiveMessage(
 				message => {
 					switch (message.command) {
@@ -159,7 +159,7 @@ async function updateConfigPanel(webviewPanel: vscode.WebviewPanel, context: vsc
         try {
 			const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
             const settingsJson = JSON.parse(settingsContent.toString());
-            webviewPanel.webview.html = configWebviewContent(settingsJson);
+            webviewPanel.webview.html = configWebviewPanel(settingsJson);
         } catch (error) {
 			vscode.window.showErrorMessage('Failed to load settings: ' + error);
         }

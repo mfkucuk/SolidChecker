@@ -1,4 +1,4 @@
-export function resultWebviewContent(answer: string) {
+export function resultWebviewPanel(answer: string) {
     return `
 	<!DOCTYPE html>
     <html lang="en">
