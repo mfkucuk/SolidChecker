@@ -11,8 +11,8 @@ To run the extension, follow these steps:
 
 ## How to use
 There are two main commands use can run using the Command Palette (<kbd>control</kbd> + <kbd>shift</kbd> + <kbd>p</kbd>):
-* **Run: Solid Checker** (<kbd>control</kbd> + <kbd>alt</kbd> + <kbd>r</kbd>) and,
-* **Config: SolidChecker** (<kbd>control</kbd> + <kbd>alt</kbd> + <kbd>c</kbd>)
+* **Solid Checker: Run** (<kbd>control</kbd> + <kbd>alt</kbd> + <kbd>r</kbd>) and,
+* **Solid Checker: Config** (<kbd>control</kbd> + <kbd>alt</kbd> + <kbd>c</kbd>)
 
 Also, you can run config command by clicking on the **wrench icon** and run command by clicking on the **robot icon**.
 
@@ -20,7 +20,7 @@ Also, you can run config command by clicking on the **wrench icon** and run comm
 This command will open the following panel:
 ![alt text](config.png)
 
-This is the configuration panel for SolidChecker. Here, the user can change how the extention behaves. The two options are changing for which of the SOLID principles will analyzed and for which language the extention will be run for.
+This is the configuration panel for SolidChecker. Here, the user can change how the extention behaves. The two options are changing which of the SOLID principles the project will be analyzed for and which language the extention will be run for.
 
 ### Run: SolidChecker command
 This command will start the analysis and when the analysis is done, this screen will pop-up:
