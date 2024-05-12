@@ -211,7 +211,7 @@ function getConfigWebviewContent(settings: any) {
 	<!DOCTYPE html>
 	<html>
 	<head>
-		<title>Solid Checker Config</title>
+		<title>Solid Checker Options</title>
 		<style>
 			body {
 				background: rgba(0, 0, 0, 0.6);
@@ -270,7 +270,7 @@ function getConfigWebviewContent(settings: any) {
 				transform: scale(1.2);
 			}
 			select {
-				width: 50%;
+				width: 25%;
 				padding: 10px;
 				border-radius: 5px;
 				background: #555;
