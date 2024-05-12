@@ -244,7 +244,7 @@ function getConfigWebviewContent(settings: any) {
 			}
 			.option:hover {
 				background-color: #333; 
-				transform: scale(1.05); 
+				
 			}
 			label {
 				color: #ddd;
