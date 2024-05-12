@@ -43,11 +43,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		if(workspaceFolder) {
 			const ignoreUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scignore');
-			const includeUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scinclude')
+			const includeUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scinclude');
 			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
 			const includeTemplateData = await vscode.workspace.fs.readFile(includeUri);
 			const files = await fetchAllFiles(includeTemplateData.toString(), ignoreTemplateData.toString());
                         
+			if (Object.entries(files).length === 0) {
+				vscode.window.showWarningMessage(`No files were supplied for the specified language`);
+				return;
+			}
+
 			await sendInitialPrompt();
 
 			let fileCount = 0;
@@ -430,7 +435,5 @@ async function setIncludeFile(settings: any, directoryUri: vscode.Uri) {
 	vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
 
 }
-
-
 
 export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
