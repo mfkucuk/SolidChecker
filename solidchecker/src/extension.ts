@@ -30,6 +30,8 @@ export async function activate(context: vscode.ExtensionContext) {
 			updateSettingsFile(scDirectoryUri);
 
 			updateIgnoreFile(scDirectoryUri);
+
+			updateIncludeFile(scDirectoryUri);
 		}
 
 	}
@@ -41,8 +43,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		if(workspaceFolder) {
 			const ignoreUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scignore');
+			const includeUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/.scinclude')
 			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
-			const files = await fetchAllFiles(ignoreTemplateData.toString());
+			const includeTemplateData = await vscode.workspace.fs.readFile(includeUri);
+			const files = await fetchAllFiles(includeTemplateData.toString(), ignoreTemplateData.toString());
                         
 			await sendInitialPrompt();
 
@@ -106,6 +110,7 @@ export async function activate(context: vscode.ExtensionContext) {
 							const scDirectoryUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker');
 							updateConfigPanel(configPanel, context); 
 							setIgnoreFile(message.settings, scDirectoryUri);
+							setIncludeFile(message.settings, scDirectoryUri);
 
 							
 							break;
@@ -336,10 +341,10 @@ async function updateConfigPanel(webviewPanel: vscode.WebviewPanel, context: vsc
     }
 }
 
-const fetchAllFiles = async (ignoreTemplateData:string): Promise<{ [fileName: string]: string }> => {
+const fetchAllFiles = async (includeTemplateData:string, ignoreTemplateData:string): Promise<{ [fileName: string]: string }> => {
     const fileNamesAndContents: { [fileName: string]: string } = {};
 
-    const files = await vscode.workspace.findFiles('**/*', transformIgnoreFile(ignoreTemplateData), 10000);
+    const files = await vscode.workspace.findFiles(transformIgnoreFile(includeTemplateData), transformIgnoreFile(ignoreTemplateData), 10000);
 
     await Promise.all(files.map(async (fileUri: vscode.Uri) => {
         const content = await vscode.workspace.fs.readFile(fileUri);
@@ -394,5 +399,23 @@ async function setIgnoreFile(settings: any, directoryUri: vscode.Uri) {
 	vscode.workspace.fs.writeFile(newIgnoreUri, ignoreContent);
 
 }
+
+async function updateIncludeFile(directoryUri: vscode.Uri) {
+	const includeTemplateData = readFileSync(`${__dirname}/../src/include_templates/.${settingsTemplateData.projectType}includetemplate`, 'utf-8');
+	
+	const includeContent = new TextEncoder().encode(includeTemplateData);
+	const newIncludeUri = vscode.Uri.joinPath(directoryUri, '.scinclude');
+	vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
+}
+
+async function setIncludeFile(settings: any, directoryUri: vscode.Uri) {
+    const includeTemplateData = readFileSync(`${__dirname}/../src/include_templates/.${settings.projectType}includetemplate`, 'utf-8');
+    const includeContent = new TextEncoder().encode(includeTemplateData);
+	const newIncludeUri = vscode.Uri.joinPath(directoryUri, '.scinclude');
+	vscode.workspace.fs.writeFile(newIncludeUri, includeContent);
+
+}
+
+
 
 export const sleep = (delay: number) => new Promise((resolve) => setTimeout(resolve, delay));
