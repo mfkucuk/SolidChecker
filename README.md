@@ -22,3 +22,6 @@ This is the configuration panel for SolidChecker. Here, the user can change how 
 
 ### Run: SolidChecker command
 This command will start the analysis and when the analysis is done, this screen will pop-up:
+![alt text](result1.png)
+![alt text](result2.png)
+![alt text](result3.png)
