@@ -60,13 +60,17 @@ export async function activate(context: vscode.ExtensionContext) {
 			const ignoreTemplateData = await vscode.workspace.fs.readFile(ignoreUri);
 			const includeTemplateData = await vscode.workspace.fs.readFile(includeUri);
 			const files = await fetchAllFiles(includeTemplateData.toString(), ignoreTemplateData.toString());
-                        
+			
 			if (Object.entries(files).length === 0) {
 				vscode.window.showWarningMessage(`No files were supplied for the specified language`);
 				return;
 			}
 
-			await sendInitialPrompt();
+			const settingsUri = vscode.Uri.joinPath(workspaceFolder.uri, '.solidchecker/settings.json');
+			const settingsContent = await vscode.workspace.fs.readFile(settingsUri);
+            const settingsJson = JSON.parse(settingsContent.toString());
+
+			await sendInitialPrompt(settingsJson);
 
 			let fileCount = 0;
 			await vscode.window.withProgress({
@@ -76,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
 			}, async (progress) => {
 				
 				for ( const [fileName, filePath] of Object.entries(files) ) {
-					await sleep(1000);
+					await sleep(1500);
 					await sendOneFilePrompt(fileName, filePath);
 					
 					fileCount++;
