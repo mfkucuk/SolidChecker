@@ -14,14 +14,42 @@
   ],
   "main": "./dist/extension.js",
   "contributes": {
+    "menus": {
+      "editor/title": [
+        {
+          "command": "solidchecker.runSolidChecker",
+          "group": "navigation"
+        },
+        {
+          "command": "solidchecker.configSolidChecker",
+          "group": "navigation"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "solidchecker.runSolidChecker",
-        "title": "Run: Solid Checker"
+        "command": "solidchecker.configSolidChecker",
+        "title": "Config",
+        "category": "SolidChecker",
+        "icon": "$(wrench)"
       },
       {
-        "command": "solidchecker.configSolidChecker",
-        "title": "Config: Solid Checker"
+        "command": "solidchecker.runSolidChecker",
+        "title": "Run",
+        "category": "SolidChecker",
+        "icon": "$(vr)"
+      }
+    ],
+    "keybindings": [
+      {
+          "command": "solidchecker.runSolidChecker",
+          "key": "ctrl+alt+r",
+          "mac": "cmd+alt+r"
+      },
+      {
+          "command": "solidchecker.configSolidChecker",
+          "key": "ctrl+alt+c",
+          "mac": "cmd+alt+c"
       }
     ]
   },
