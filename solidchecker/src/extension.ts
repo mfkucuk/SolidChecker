@@ -214,85 +214,99 @@ function getConfigWebviewContent(settings: any) {
 		<title>Solid Checker Config</title>
 		<style>
 			body {
-				font-family: Arial, sans-serif;
-				background-color: #f4f4f4;
-				padding: 20px;
+				background: rgba(0, 0, 0, 0.6);
+				font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 				display: flex;
 				justify-content: center;
-				align-items: flex-start;
-				min-height: 100vh;
+				align-items: center;
+				height: 100vh;
+				margin: 0;
 			}
-
 			.container {
-				max-width: 600px;
-				width: 100%;
+				background-color: #222;
+				padding: 40px;
+				border-radius: 10px;
+				box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+				width: 600px;
 			}
-
 			h1 {
-				color: #008000;
-				margin-bottom: 20px;
+				color: #eee;
 				text-align: center;
+				margin-bottom: 30px;
+				font-size: 28px;
 			}
-
-			ol {
-				list-style-type: none;
-				padding: 0;
+			.option {
+				background-color: #2b2b2b;
+				border-radius: 8px;
+				padding: 10px;
+				margin-bottom: 12px;
+				transition: background-color 0.3s, transform 0.2s;
 			}
-
-			li {
-				margin-bottom: 10px;
-				color: black;
+			.option:hover {
+				background-color: #333; 
+				transform: scale(1.05); 
 			}
-
 			label {
+				color: #ddd;
+				font-size: 18px;
 				display: block;
-				cursor: pointer;
+				margin-bottom: 8px;
 			}
-
-			input[type="checkbox"] {
+			.principle-letter {
+				transition: all 0.3s ease;
+				font-weight: normal;
 				margin-right: 10px;
 			}
-
+			input[type="checkbox"] {
+				accent-color: #4CAF50;
+				width: 20px;
+				height: 20px;
+				border-radius: 5px;
+				margin-right: 10px;
+			}
+			input[type="checkbox"]:checked + .principle-letter {
+				font-weight: bold;
+				color: #4CAF50;
+				transform: scale(1.2);
+			}
 			select {
-				padding: 5px;
-				font-size: 16px;
-				border: 1px solid #ccc;
+				width: 50%;
+				padding: 10px;
 				border-radius: 5px;
-			}
-
-			select:-moz-first-node
-
-			button {
-				padding: 10px 20px;
-				font-size: 16px;
-				background-color: #008000;
-				color: #fff;
+				background: #555;
+				color: white;
 				border: none;
-				border-radius: 5px;
-				cursor: pointer;
+				font-size: 16px;
+				margin-top: 8px;
+			}
+			button {
+				background-color: #007BFF;
+				color: white;
+				border: none;
+				padding: 15px 30px;
+				text-align: center;
+				text-decoration: none;
 				display: block;
-				margin: 0 auto;
+				font-size: 18px;
+				margin: 20px auto;
+				cursor: pointer;
+				border-radius: 8px;
+				transition: background-color 0.3s, transform 0.2s;
 			}
-
 			button:hover {
-				background-color: #004080;
-			}
-
-			div {
-				margin-bottom: 20px;
+				background-color: #0056b3;
+				transform: scale(1.05);
 			}
 		</style>
 	</head>
 	<body>
 		<div class="container">
-			<h1>Config Panel</h1>
-			<ol>
-				<li><label><input type="checkbox" id="sPrinciple" ${settings.checkForS ? 'checked' : ''}> S: Single Responsibility Principle</label></li>
-				<li><label><input type="checkbox" id="oPrinciple" ${settings.checkForO ? 'checked' : ''}> O: Open-Closed Principle</label></li>
-				<li><label><input type="checkbox" id="lPrinciple" ${settings.checkForL ? 'checked' : ''}> L: Liskov Substitution Principle</label></li>
-				<li><label><input type="checkbox" id="iPrinciple" ${settings.checkForI ? 'checked' : ''}> I: Interface Segregation Principle</label></li>
-				<li><label><input type="checkbox" id="dPrinciple" ${settings.checkForD ? 'checked' : ''}> D: Dependency Inversion Principle</label></li>
-			</ol>
+			<h1>SolidChecker Options</h1>
+			<div class="option"><label><input type="checkbox" id="sPrinciple" ${settings.checkForS ? 'checked' : ''}><span class="principle-letter">S: </span>Single Responsibility Principle</label></div>
+			<div class="option"><label><input type="checkbox" id="oPrinciple" ${settings.checkForO ? 'checked' : ''}><span class="principle-letter">O: </span>Open-Closed Principle</label></div>
+			<div class="option"><label><input type="checkbox" id="lPrinciple" ${settings.checkForL ? 'checked' : ''}><span class="principle-letter">L: </span>Liskov Substitution Principle</label></div>
+			<div class="option"><label><input type="checkbox" id="iPrinciple" ${settings.checkForI ? 'checked' : ''}><span class="principle-letter">I: </span>Interface Segregation Principle</label></div>
+			<div class="option"><label><input type="checkbox" id="dPrinciple" ${settings.checkForD ? 'checked' : ''}><span class="principle-letter">D: </span>Dependency Inversion Principle</label></div>
 			<div>
 				<label for="languageSelect">Select Language:</label>
 				<select id="languageSelect">
@@ -322,6 +336,7 @@ function getConfigWebviewContent(settings: any) {
 		</script>
 	</body>
 	</html>
+
     `;
 }
 
