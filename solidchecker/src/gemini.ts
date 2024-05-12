@@ -44,12 +44,14 @@ export async function sendEndPrompt() {
 }
 
 export function beautifyAnswer(text: string): string {
-    // Regex pattern to match text enclosed within **
-    const pattern = /\*\*(.*?)\*\*/g;
 
-    // Replace text enclosed within ** with <h1> tags
-    const parsedText = text.replace(pattern, '<h2>$1</h2>');
+    const boldPattern = /\*\*(.*?)\*\*/g;
 
-    // Enclose the rest of the text with <p> tags
+    const codePattern = /```(.*?)```/gs;
+
+    let parsedText = text.replace(boldPattern, '<h2>$1</h2>');
+
+    parsedText = parsedText.replace(codePattern, '<div class="code-container"><pre>$1</pre></div>');
+
     return `<p>${parsedText}</p>`;
 }
