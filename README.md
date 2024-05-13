@@ -24,7 +24,7 @@ Also, you can run config command by clicking on the **wrench icon** and run comm
 This command will open the following panel:
 ![alt text](config.png)
 
-This is the configuration panel for SolidChecker. Here, the user can change how the extention behaves. The two options are changing which of the SOLID principles the project will be analyzed for and which language the extention will be run for.
+This is the configuration panel for SolidChecker. Here, the user can change how the extension behaves. The two options are changing which of the SOLID principles the project will be analyzed for and which language the extension will be run for.
 
 ### Run: SolidChecker command
 This command will start the analysis and when the analysis is done, this screen will pop-up:
