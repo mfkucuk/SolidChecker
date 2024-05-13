@@ -35,9 +35,9 @@ export async function sendInitialPrompt(settings: any): Promise<string> {
         **2. Detailed Analysis**
             !!2.x {Principle name}!!
             
-        **3. Code suggestions** (in this part actually write code)`;
+        **3. Code suggestions** (You must provide actual code in a code block not just explanations)`;
     
-    chat = model.startChat();
+    chat = model.startChat({ history: [] });
     
     const result = await chat.sendMessage(initialPrompt); 
     

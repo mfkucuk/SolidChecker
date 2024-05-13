@@ -6,6 +6,10 @@ To run the extension, follow these steps:
 * Clone the repo, open it with **VSCode**
 * Navigate to the `SolidChecker/solidchecker` folder,
 * Run `npm install` to install the dependencies,
+* In the src directory create a file named `apiKey.ts` and add your Gemini API key as follow:
+```
+export const apiKey = '<YOUR_GEMINI_API_KEY>';
+```
 * Then, navigate to `src/extention.ts` and hit **F5**.
 * You will be opening a Debug VSCode with our extention being activated.
 
