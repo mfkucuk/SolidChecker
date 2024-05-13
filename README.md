@@ -3,8 +3,7 @@ A VSCode extention that enables you to write code by obeying SOLID principles.
 
 ## How to run
 To run the extension, follow these steps:
-* Clone the repo, open it with **VSCode**
-* Navigate to the `SolidChecker/solidchecker` folder,
+* Clone the repo, open the `SolidChecker/solidchecker` folder with **VSCode**
 * Run `npm install` to install the dependencies,
 * In the src directory create a file named `apiKey.ts` and add your Gemini API key as follows:
 ```typescript
