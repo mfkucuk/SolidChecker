@@ -10,7 +10,8 @@ To run the extension, follow these steps:
 export const apiKey = '<YOUR_GEMINI_API_KEY>';
 ```
 * Then, navigate to `src/extension.ts` and hit **F5**.
-* You will be opening a Debug VSCode with our extension being activated.
+* A pop-up will open, you can click on **Debug Anyway**.
+* A Debug VSCode with our extension being activated.
 
 ## How to use
 There are two main commands use can run using the Command Palette (<kbd>control</kbd> + <kbd>shift</kbd> + <kbd>p</kbd>):
