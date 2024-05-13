@@ -7,7 +7,7 @@ To run the extension, follow these steps:
 * Navigate to the `SolidChecker/solidchecker` folder,
 * Run `npm install` to install the dependencies,
 * In the src directory create a file named `apiKey.ts` and add your Gemini API key as follows:
-```
+```typescript
 export const apiKey = '<YOUR_GEMINI_API_KEY>';
 ```
 * Then, navigate to `src/extention.ts` and hit **F5**.
